@@ -9,7 +9,7 @@
 </head>
 <body>
   <header class="topbar" role="banner">
-    <div class="brand">
+    <div class="brand" style="cursor:pointer" onclick="location.href='home.html'">
       <img src="logo%20(2).jpeg" alt="Cardenio ACA" class="brandLogo">
       <div>
         <strong>Asociación Carnaval</strong>
@@ -82,18 +82,22 @@
 
   <!-- Login Modal -->
   <div id="loginOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
-    <div class="modal small">
-      <div class="modalHead">
+    <div class="modal loginModal">
+      <button id="closeLogin" class="loginClose" aria-label="Cerrar">&times;</button>
+      <div class="loginHeader">
+        <img src="logo%20(2).jpeg" alt="Cardenio ACA" class="loginLogo">
         <h2 id="loginTitle">Acceso administrador</h2>
-        <button id="closeLogin" class="closeBtn" aria-label="Cerrar">&times;</button>
+        <p>Introduce tus credenciales para acceder al panel.</p>
       </div>
-      <label for="adminEmail">Email
-        <input id="adminEmail" type="email" autocomplete="email" required>
-      </label>
-      <label for="adminPassword">Contraseña
-        <input id="adminPassword" type="password" autocomplete="current-password" required>
-      </label>
-      <button id="doLogin" class="primary">Entrar</button>
+      <div class="loginBody">
+        <label for="adminEmail">Email
+          <input id="adminEmail" type="email" autocomplete="email" placeholder="tu@email.com" required>
+        </label>
+        <label for="adminPassword">Contraseña
+          <input id="adminPassword" type="password" autocomplete="current-password" placeholder="••••••••" required>
+        </label>
+        <button id="doLogin" class="primary loginBtn">Entrar al panel</button>
+      </div>
     </div>
   </div>
 

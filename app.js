@@ -101,19 +101,21 @@ function bind() {
   };
 
   $('clear').onclick = () => { selected.clear(); render(); };
-  $('adminLoginBtn').onclick = () => $('loginOverlay').classList.remove('hidden');
-  $('closeLogin').onclick = () => $('loginOverlay').classList.add('hidden');
+  function openOverlay(el) { el.classList.remove('hidden'); document.body.classList.add('modalOpen'); }
+  function closeOverlay(el) { el.classList.add('hidden'); document.body.classList.remove('modalOpen'); }
+  $('adminLoginBtn').onclick = () => openOverlay($('loginOverlay'));
+  $('closeLogin').onclick = () => closeOverlay($('loginOverlay'));
   $('doLogin').onclick = login;
   $('adminPassword').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
   $('adminEmail').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
   $('checkout').onclick = openCheckout;
-  $('closeCheckout').onclick = () => $('checkoutOverlay').classList.add('hidden');
+  $('closeCheckout').onclick = () => closeOverlay($('checkoutOverlay'));
   $('backBuyer').onclick = () => step('buyer');
   $('backAttendees').onclick = () => step('att');
-  $('closeTickets').onclick = () => $('ticketOverlay').classList.add('hidden');
+  $('closeTickets').onclick = () => closeOverlay($('ticketOverlay'));
   $('printTickets').onclick = () => {
     const overlay = $('ticketOverlay');
-    if (overlay) overlay.classList.remove('hidden');
+    if (overlay) openOverlay(overlay);
     setTimeout(() => window.print(), 100);
   };
   $('downloadPdf').onclick = downloadTicketPdf;
@@ -269,6 +271,7 @@ function openCheckout() {
   const f = eventInfo();
   if (!f) return;
   $('checkoutOverlay').classList.remove('hidden');
+  document.body.classList.add('modalOpen');
   $('checkoutEventName').textContent = f.text;
   step('buyer');
 }
@@ -425,6 +428,7 @@ async function createOrder() {
   for (let i = 0; i < attendees.length; i++) {
     const a = attendees[i];
     const seat = seatByCoord.get(a.seat.coord);
+    const qrToken = crypto.randomUUID();
     const { data: t, error: te } = await sb.from('tickets').insert({
       numero_entrada: 'ENT-' + String(now).slice(-6) + '-' + (i + 1),
       order_id: order.id,
@@ -433,6 +437,7 @@ async function createOrder() {
       nombre: a.nombre,
       apellidos: a.apellidos,
       dni: a.dni,
+      qr_token: qrToken,
       estado: estado === 'pagado' ? 'generada' : 'pendiente'
     }).select('*, seats(*)').single();
 
@@ -454,12 +459,14 @@ async function createOrder() {
 
   selected.clear();
   $('checkoutOverlay').classList.add('hidden');
+  document.body.classList.remove('modalOpen');
   await loadStatuses();
 
   if (estado === 'pagado') {
     toast('¡Pedido creado! Entrada generada.', 'success');
     renderTicketDocuments($('ticketsList'), made, f.text, order.numero_pedido);
     $('ticketOverlay').classList.remove('hidden');
+    document.body.classList.add('modalOpen');
   } else {
     toast('Pedido pendiente de Bizum. La entrada se generará cuando el admin confirme.', 'info');
   }

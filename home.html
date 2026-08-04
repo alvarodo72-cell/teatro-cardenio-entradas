@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Teatro Cardenio - Asociación Carnaval ACA. Compra tus entradas online.">
+  <title>Teatro Cardenio | Asociación Carnaval ACA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --rojo: #7b1d1d;
+      --rojoOscuro: #4a1010;
+      --dorado: #d4a017;
+      --doradoClaro: #f0c040;
+      --oscuro: #0f0f1a;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--oscuro);
+      color: #fff;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* --- HERO --- */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 20px;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(123,29,29,0.4) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 80%, rgba(212,160,23,0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 20% 90%, rgba(123,29,29,0.2) 0%, transparent 50%);
+      z-index: 0;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 200px;
+      background: linear-gradient(to top, var(--oscuro), transparent);
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 700px;
+    }
+
+    /* Logo */
+    .heroLogo {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid var(--dorado);
+      box-shadow: 0 0 60px rgba(212,160,23,0.3), 0 0 120px rgba(123,29,29,0.2);
+      margin-bottom: 32px;
+      animation: logoFloat 4s ease-in-out infinite;
+    }
+
+    @keyframes logoFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .heroTitle {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(40px, 8vw, 72px);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #fff 0%, var(--doradoClaro) 50%, #fff 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 4s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0%, 100% { background-position: 0% center; }
+      50% { background-position: 200% center; }
+    }
+
+    .heroSubtitle {
+      font-size: clamp(16px, 3vw, 22px);
+      color: #d4a4a4;
+      font-weight: 500;
+      margin-bottom: 12px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .heroDesc {
+      font-size: clamp(14px, 2.5vw, 18px);
+      color: #a0a0b0;
+      line-height: 1.6;
+      margin-bottom: 40px;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* CTA Button */
+    .ctaBtn {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: linear-gradient(135deg, var(--rojo), #991b1b);
+      color: #fff;
+      text-decoration: none;
+      padding: 18px 40px;
+      border-radius: 60px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      border: 2px solid rgba(255,255,255,0.15);
+      box-shadow: 0 8px 32px rgba(123,29,29,0.4), 0 0 80px rgba(123,29,29,0.15);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ctaBtn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent, rgba(255,255,255,0.1), transparent);
+      transform: translateX(-100%);
+      transition: transform 0.5s ease;
+    }
+
+    .ctaBtn:hover::before { transform: translateX(100%); }
+
+    .ctaBtn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(123,29,29,0.5), 0 0 100px rgba(212,160,23,0.2);
+      border-color: var(--dorado);
+    }
+
+    .ctaBtn:active { transform: translateY(-1px); }
+
+    .ctaArrow {
+      font-size: 22px;
+      transition: transform 0.3s ease;
+    }
+    .ctaBtn:hover .ctaArrow { transform: translateX(4px); }
+
+    /* --- FEATURES --- */
+    .features {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 900px;
+      margin: -60px auto 0;
+      padding: 0 20px 60px;
+    }
+
+    .feature {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 28px 20px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+
+    .feature:hover {
+      background: rgba(255,255,255,0.07);
+      border-color: rgba(212,160,23,0.3);
+      transform: translateY(-4px);
+    }
+
+    .featureIcon {
+      font-size: 36px;
+      margin-bottom: 14px;
+      display: block;
+    }
+
+    .feature h3 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #fff;
+    }
+
+    .feature p {
+      font-size: 13px;
+      color: #888;
+      line-height: 1.5;
+    }
+
+    /* --- FOOTER --- */
+    .footer {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 40px 20px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      color: #555;
+      font-size: 13px;
+    }
+
+    .footer a {
+      color: var(--dorado);
+      text-decoration: none;
+    }
+
+    /* --- PARTICLES (decorative) --- */
+    .particles {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: var(--dorado);
+      border-radius: 50%;
+      opacity: 0;
+      animation: particleFloat 8s ease-in-out infinite;
+    }
+
+    .particle:nth-child(1) { left: 10%; animation-delay: 0s; animation-duration: 7s; }
+    .particle:nth-child(2) { left: 25%; animation-delay: 1.5s; animation-duration: 9s; }
+    .particle:nth-child(3) { left: 40%; animation-delay: 3s; animation-duration: 6s; }
+    .particle:nth-child(4) { left: 55%; animation-delay: 0.8s; animation-duration: 8s; }
+    .particle:nth-child(5) { left: 70%; animation-delay: 2.2s; animation-duration: 7.5s; }
+    .particle:nth-child(6) { left: 85%; animation-delay: 4s; animation-duration: 6.5s; }
+    .particle:nth-child(7) { left: 15%; animation-delay: 1s; animation-duration: 10s; }
+    .particle:nth-child(8) { left: 60%; animation-delay: 3.5s; animation-duration: 8.5s; }
+
+    @keyframes particleFloat {
+      0% { transform: translateY(100vh) scale(0); opacity: 0; }
+      10% { opacity: 0.6; }
+      90% { opacity: 0.6; }
+      100% { transform: translateY(-20vh) scale(1.5); opacity: 0; }
+    }
+
+    /* --- RESPONSIVE --- */
+    @media (max-width: 768px) {
+      .features { grid-template-columns: 1fr; max-width: 400px; gap: 16px; margin-top: -40px; }
+      .heroLogo { width: 120px; height: 120px; }
+      .ctaBtn { padding: 16px 32px; font-size: 16px; }
+    }
+
+    @media (max-width: 480px) {
+      .hero { padding: 30px 16px; }
+      .heroLogo { width: 100px; height: 100px; margin-bottom: 24px; }
+      .ctaBtn { padding: 14px 28px; font-size: 15px; width: 100%; justify-content: center; max-width: 300px; }
+      .feature { padding: 20px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <section class="hero">
+    <div class="particles">
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+    </div>
+
+    <div class="hero-content">
+      <img src="logo%20(2).jpeg" alt="Cardenio ACA" class="heroLogo">
+      <p class="heroSubtitle">Asociación Carnaval ACA</p>
+      <h1 class="heroTitle">Teatro Cardenio</h1>
+      <p class="heroDesc">Disfruta de las mejores funciones en el escenario más especial del carnaval. Entradas online rápidas y seguras.</p>
+
+      <a href="index.html" class="ctaBtn">
+        🎫 Comprar entradas
+        <span class="ctaArrow">→</span>
+      </a>
+    </div>
+  </section>
+
+  <div class="features">
+    <div class="feature">
+      <span class="featureIcon">⚡</span>
+      <h3>Rápido y fácil</h3>
+      <p>Compra tu entrada en menos de 2 minutos desde tu móvil o ordenador.</p>
+    </div>
+    <div class="feature">
+      <span class="featureIcon">📱</span>
+      <h3>Entrada con QR</h3>
+      <p>Recibe tu entrada digital con código QR. Solo muestra tu pantalla en la entrada.</p>
+    </div>
+    <div class="feature">
+      <span class="featureIcon">💺</span>
+      <h3>Elige tu butaca</h3>
+      <p>Selecciona tu asiento favorito del mapa del teatro al comprar.</p>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>© 2026 Asociación Carnaval ACA</p>
+  </footer>
+
+</body>
+</html>
