@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin | Entrada integrada</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">
+      <img src="logo%20(2).jpeg" alt="Cardenio ACA" class="brandLogo">
+      <div>
+        <strong>Panel administrador</strong>
+        <small>Entradas integradas</small>
+      </div>
+    </div>
+    <div class="topRight">
+      <label for="eventId">Función</label>
+      <select id="eventId" aria-label="Seleccionar función"></select>
+      <button id="logoutAdmin" aria-label="Cerrar sesión">Salir</button>
+    </div>
+  </header>
+
+  <main class="adminGrid" role="main">
+    <nav class="adminNav" aria-label="Navegación administrador">
+      <div class="navSection">
+        <span class="navLabel">Principal</span>
+        <button data-tab="dashboard" class="active" aria-pressed="true"><span class="navIcon">📊</span> Dashboard</button>
+        <button data-tab="taquilla" aria-pressed="false" class="navHighlight"><span class="navIcon">🎭</span> Taquilla <span class="navBadge">VENTA</span></button>
+      </div>
+      <div class="navSection">
+        <span class="navLabel">Gestión</span>
+        <button data-tab="eventos" aria-pressed="false"><span class="navIcon">📅</span> Eventos</button>
+        <button data-tab="gestion" aria-pressed="false"><span class="navIcon">💶</span> Gestión</button>
+        <button data-tab="compras" aria-pressed="false"><span class="navIcon">🧾</span> Compras</button>
+        <button data-tab="bizum" aria-pressed="false"><span class="navIcon">📲</span> Bizum <span class="navBadge warn" id="bizumBadge" style="display:none">0</span></button>
+        <button data-tab="buscar" aria-pressed="false"><span class="navIcon">🔎</span> Buscar</button>
+      </div>
+      <a href="index.html" class="navBack">← Volver a taquilla pública</a>
+    </nav>
+
+    <section class="adminContent">
+
+      <!-- ===== DASHBOARD ===== -->
+      <div id="dashboard" class="tab active">
+        <div class="dash">
+          <div class="kpi"><span>Vendidas</span><strong id="kSold">0</strong></div>
+          <div class="kpi"><span>Pendientes</span><strong id="kPending">0</strong></div>
+          <div class="kpi"><span>Recaudación</span><strong id="kRevenue">0 €</strong></div>
+        </div>
+        <section class="card"><h2>Resumen</h2><p id="adminEventText"></p></section>
+        <section class="card" style="margin-top:12px">
+          <h2>💰 Desglose de beneficios</h2>
+          <p style="color:#64748b;font-size:13px;margin-bottom:12px">Gasto de gestión: 2,50 € por entrada vendida</p>
+          <div class="dash" id="dashBreakdown"></div>
+        </section>
+      </div>
+
+      <!-- ===== TAQUILLA ===== -->
+      <div id="taquilla" class="tab">
+        <div class="taquillaLayout">
+          <div class="taquillaMapPanel">
+            <div class="taquillaMapHeader"><h2>🎭 Venta directa en taquilla</h2><p>Selecciona las butacas y genera la entrada al instante.</p></div>
+            <nav class="zoneChooser" aria-label="Zonas del teatro">
+              <button data-view="patio" class="zoneCard active" aria-pressed="true"><strong>Patio</strong></button>
+              <button data-view="preferencia" class="zoneCard" aria-pressed="false"><strong>Preferencia</strong></button>
+              <button data-view="palcos" class="zoneCard" aria-pressed="false"><strong>Palcos</strong></button>
+              <button data-view="completo" class="zoneCard" aria-pressed="false"><strong>Vista completa</strong></button>
+            </nav>
+            <div class="legend" style="padding:8px 20px;background:#f8fafc;border-bottom:1px solid #eef2f7">
+              <span><i class="free"></i> Libre</span><span><i class="sel"></i> Seleccionada</span><span><i class="sold"></i> Vendida</span><span><i class="pending"></i> Pendiente</span>
+            </div>
+            <div class="mapArea" id="taquillaMapArea"><div id="taquillaSeatMap"></div></div>
+          </div>
+          <div class="taquillaSidePanel">
+            <div class="card taquillaSummaryCard">
+              <h3>Butacas seleccionadas</h3>
+              <div class="taquillaSelectedList" id="taquillaSelectedList"><p class="taquillaEmptyMsg">Selecciona butacas libres en el mapa.</p></div>
+              <div class="taquillaTotal"><span>Total</span><strong id="taquillaTotal">0 €</strong></div>
+            </div>
+            <div class="card taquillaFormCard" id="taquillaFormCard" style="display:none">
+              <h3>Datos del asistente</h3>
+              <div id="taquillaAttendeeForms"></div>
+              <div class="taquillaQuickActions">
+                <div class="taquillaPayRadios">
+                  <label class="taquillaRadio"><input type="radio" name="taquillaPayType" value="efectivo" checked><span class="taquillaRadioBox"><strong>💵 Efectivo</strong><small>Cobro en taquilla</small></span></label>
+                  <label class="taquillaRadio"><input type="radio" name="taquillaPayType" value="invitacion"><span class="taquillaRadioBox"><strong>🎁 Invitación</strong><small>Entrada gratuita</small></span></label>
+                </div>
+                <button id="taquillaGenerateBtn" class="primary taquillaGenBtn" disabled>Generar entrada</button>
+                <button id="taquillaClearBtn" class="light">Limpiar selección</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== EVENTOS – WIZARD ===== -->
+      <div id="eventos" class="tab">
+        <div class="wizardContainer">
+          <div class="wizardHeader">
+            <h2>📅 Crear nueva función</h2>
+          </div>
+          <div class="wizardSteps">
+            <div class="wizStep active" data-step="1"><span class="wizNum">1</span> Datos básicos</div>
+            <div class="wizStep" data-step="2"><span class="wizNum">2</span> Layout del teatro</div>
+            <div class="wizStep" data-step="3"><span class="wizNum">3</span> Precios</div>
+            <div class="wizStep" data-step="4"><span class="wizNum">4</span> Resumen</div>
+          </div>
+
+          <!-- Paso 1: Datos básicos -->
+          <div class="wizPanel active" id="wizStep1">
+            <div class="wizPanelInner">
+              <h3>Información del evento</h3>
+              <div class="wizFormGrid">
+                <div class="wizField wizWide">
+                  <label for="wizNombre">Nombre del evento *</label>
+                  <input id="wizNombre" placeholder="Ej: Carnaval Adultos 2026" required>
+                  <small>Nombre que verán los compradores</small>
+                </div>
+                <div class="wizField">
+                  <label for="wizFecha">Fecha *</label>
+                  <input id="wizFecha" type="date" required>
+                </div>
+                <div class="wizField">
+                  <label for="wizHora">Hora *</label>
+                  <input id="wizHora" type="time" required>
+                </div>
+                <div class="wizField">
+                  <label for="wizEstado">Estado</label>
+                  <select id="wizEstado">
+                    <option value="activo">🟢 Activo (visible y a la venta)</option>
+                    <option value="oculto">🟡 Oculto (solo admin lo ve)</option>
+                    <option value="cerrado">🔴 Ventas cerradas</option>
+                  </select>
+                </div>
+                <div class="wizField">
+                  <label for="wizDescripcion">Descripción corta</label>
+                  <input id="wizDescripcion" placeholder="Opcional: info breve del evento">
+                </div>
+              </div>
+            </div>
+            <div class="wizActions">
+              <div></div>
+              <button class="primary" onclick="wizardNext()">Siguiente →</button>
+            </div>
+          </div>
+
+          <!-- Paso 2: Layout del teatro -->
+          <div class="wizPanel" id="wizStep2">
+            <div class="wizPanelInner">
+              <h3>Configurar zonas del teatro</h3>
+              <p class="wizSubtitle">Pega una tabla desde Excel o Word para generar el mapa de asientos automáticamente, o configura manualmente.</p>
+
+              <!-- EXCEL IMPORT -->
+              <div class="excelImportSection">
+                <div class="excelImportHeader">
+                  <span class="excelIcon">📋</span>
+                  <div>
+                    <strong>Importar desde Excel / Word</strong>
+                    <small>Copia una tabla y pégala aquí (Ctrl+V)</small>
+                  </div>
+                </div>
+                <div class="excelImportBody">
+                  <textarea id="wizExcelInput" class="excelTextarea" rows="8" placeholder="Pega aquí tu tabla de Excel o Word...&#10;&#10;Formatos aceptados:&#10;• Copiar/pegar de Excel (tabuladores)&#10;• CSV con comas o punto y coma&#10;• Texto con espacios&#10;&#10;Cada fila = una fila del teatro&#10;Cada columna = una butaca"></textarea>
+                  <div class="excelImportActions">
+                    <button class="primary" onclick="parseExcelLayout()">🔍 Detectar layout</button>
+                    <button class="light" onclick="clearExcelImport()">Limpiar</button>
+                  </div>
+                  <div class="excelImportHelp">
+                    <small><strong>Formato:</strong> Cada fila = una fila del teatro. Cada columna = una butaca. Copia directamente desde Excel o Word (se pega con tabuladores).</small>
+                  </div>
+                  <div id="wizExcelPreview" class="excelPreview" style="display:none"></div>
+                  <div id="wizExcelZones" class="excelZoneSelector" style="display:none">
+                    <label>Asignar zonas por rango de filas:</label>
+                    <div class="excelZoneRanges" id="wizExcelZoneRanges"></div>
+                    <button class="primary" onclick="applyExcelLayout()" style="margin-top:10px">✅ Aplicar al formulario</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="excelDivider"><span>o configura manualmente</span></div>
+
+              <div class="zonesConfig" id="wizManualConfig">
+                <!-- PATIO -->
+                <div class="zoneConfigCard">
+                  <div class="zoneConfigHeader patio"><span class="zoneIcon">💺</span><strong>Patio de butacas</strong></div>
+                  <div class="zoneConfigBody">
+                    <div class="wizFormGrid three">
+                      <div class="wizField">
+                        <label for="wizPatioFilas">Filas</label>
+                        <input id="wizPatioFilas" type="number" min="1" max="50" value="15">
+                      </div>
+                      <div class="wizField">
+                        <label for="wizPatioButIzq">Butacas lado izq. (impares)</label>
+                        <input id="wizPatioButIzq" type="number" min="1" max="50" value="11">
+                        <small>Nº de butacas impares (21,19...1)</small>
+                      </div>
+                      <div class="wizField">
+                        <label for="wizPatioButDer">Butacas lado der. (pares)</label>
+                        <input id="wizPatioButDer" type="number" min="1" max="50" value="11">
+                        <small>Nº de butacas pares (2,4...22)</small>
+                      </div>
+                    </div>
+                    <div class="wizPreview" id="wizPatioPreview"></div>
+                  </div>
+                </div>
+                <!-- PREFERENCIA -->
+                <div class="zoneConfigCard">
+                  <div class="zoneConfigHeader preferencia"><span class="zoneIcon">⭐</span><strong>Preferencia</strong></div>
+                  <div class="zoneConfigBody">
+                    <div class="wizFormGrid three">
+                      <div class="wizField">
+                        <label for="wizPrefFilas">Filas</label>
+                        <input id="wizPrefFilas" type="number" min="1" max="50" value="9">
+                      </div>
+                      <div class="wizField">
+                        <label for="wizPrefButIzq">Butacas lado izq. (impares)</label>
+                        <input id="wizPrefButIzq" type="number" min="1" max="50" value="9">
+                      </div>
+                      <div class="wizField">
+                        <label for="wizPrefButDer">Butacas lado der. (pares)</label>
+                        <input id="wizPrefButDer" type="number" min="1" max="50" value="9">
+                      </div>
+                    </div>
+                    <div class="wizPreview" id="wizPrefPreview"></div>
+                  </div>
+                </div>
+                <!-- PALCOS -->
+                <div class="zoneConfigCard">
+                  <div class="zoneConfigHeader palcos"><span class="zoneIcon">🎪</span><strong>Palcos</strong></div>
+                  <div class="zoneConfigBody">
+                    <div class="wizFormGrid two">
+                      <div class="wizField">
+                        <label for="wizPalcosAltoImpar">Alto impar (nº palcos)</label>
+                        <input id="wizPalcosAltoImpar" type="number" min="0" max="50" value="15">
+                      </div>
+                      <div class="wizField">
+                        <label for="wizPalcosAltoPar">Alto par (nº palcos)</label>
+                        <input id="wizPalcosAltoPar" type="number" min="0" max="50" value="15">
+                      </div>
+                      <div class="wizField">
+                        <label for="wizPalcosBajoImpar">Bajo impar (nº palcos)</label>
+                        <input id="wizPalcosBajoImpar" type="number" min="0" max="50" value="12">
+                      </div>
+                      <div class="wizField">
+                        <label for="wizPalcosBajoPar">Bajo par (nº palcos)</label>
+                        <input id="wizPalcosBajoPar" type="number" min="0" max="50" value="12">
+                      </div>
+                    </div>
+                    <div class="wizPreview" id="wizPalcosPreview"></div>
+                  </div>
+                </div>
+              </div>
+              </div>
+            </div>
+            <div class="wizActions">
+              <button class="light" onclick="wizardPrev()">← Atrás</button>
+              <button class="primary" onclick="wizardNext()">Siguiente →</button>
+            </div>
+          </div>
+
+          <!-- Paso 3: Precios -->
+          <div class="wizPanel" id="wizStep3">
+            <div class="wizPanelInner">
+              <h3>Precios por zona</h3>
+              <p class="wizSubtitle">Establece el precio base de cada zona y el gasto de gestión por entrada.</p>
+              <div class="zonesConfig">
+                <div class="priceCard">
+                  <div class="priceCardHeader patio">💺 <strong>Patio de butacas</strong><span id="wizPatioSeats">0 butacas</span></div>
+                  <div class="priceCardBody">
+                    <div class="wizFormGrid three">
+                      <div class="wizField"><label for="wizPatioPrecio">Precio entrada (€) *</label><input id="wizPatioPrecio" type="number" min="0" step="0.50" value="18"></div>
+                      <div class="wizField"><label>Precio total zona</label><div class="priceResult" id="wizPatioTotal">0 €</div></div>
+                      <div class="wizField"><label>Butacas totales</label><div class="priceResult" id="wizPatioCount">0</div></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="priceCard">
+                  <div class="priceCardHeader preferencia">⭐ <strong>Preferencia</strong><span id="wizPrefSeats">0 butacas</span></div>
+                  <div class="priceCardBody">
+                    <div class="wizFormGrid three">
+                      <div class="wizField"><label for="wizPrefPrecio">Precio entrada (€) *</label><input id="wizPrefPrecio" type="number" min="0" step="0.50" value="14"></div>
+                      <div class="wizField"><label>Precio total zona</label><div class="priceResult" id="wizPrefTotal">0 €</div></div>
+                      <div class="wizField"><label>Butacas totales</label><div class="priceResult" id="wizPrefCount">0</div></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="priceCard">
+                  <div class="priceCardHeader palcos">🎪 <strong>Palcos</strong><span id="wizPalcosSeats">0 butacas</span></div>
+                  <div class="priceCardBody">
+                    <div class="wizFormGrid three">
+                      <div class="wizField"><label for="wizPalcosPrecio">Precio entrada (€) *</label><input id="wizPalcosPrecio" type="number" min="0" step="0.50" value="22"></div>
+                      <div class="wizField"><label>Precio total zona</label><div class="priceResult" id="wizPalcosTotal">0 €</div></div>
+                      <div class="wizField"><label>Butacas totales</label><div class="priceResult" id="wizPalcosCount">0</div></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="priceCard priceCardGestion">
+                  <div class="priceCardHeader gestion">💶 <strong>Gastos de gestión</strong></div>
+                  <div class="priceCardBody">
+                    <div class="wizFormGrid two">
+                      <div class="wizField"><label for="wizGestionFee">Gasto gestión por entrada (€)</label><input id="wizGestionFee" type="number" min="0" step="0.10" value="2.50"></div>
+                      <div class="wizField"><label>Total gestión estimado</label><div class="priceResult" id="wizGestionTotal">0 €</div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="wizActions">
+              <button class="light" onclick="wizardPrev()">← Atrás</button>
+              <button class="primary" onclick="wizardNext()">Siguiente →</button>
+            </div>
+          </div>
+
+          <!-- Paso 4: Resumen -->
+          <div class="wizPanel" id="wizStep4">
+            <div class="wizPanelInner">
+              <h3>Resumen del evento</h3>
+              <div class="wizSummary" id="wizSummary"></div>
+            </div>
+            <div class="wizActions">
+              <button class="light" onclick="wizardPrev()">← Atrás</button>
+              <button class="primary wizCreateBtn" id="wizCreateBtn" onclick="wizardCreate()">🎭 Crear función</button>
+            </div>
+          </div>
+        </div>
+
+        <section class="card" style="margin-top:16px">
+          <h3>Funciones existentes</h3>
+          <div id="eventsList"></div>
+        </section>
+      </div>
+
+      <!-- ===== GESTIÓN – BENEFICIOS ===== -->
+      <div id="gestion" class="tab">
+        <div id="gestionSummary"></div>
+      </div>
+
+      <!-- ===== COMPRAS ===== -->
+      <div id="compras" class="tab">
+        <section class="card">
+          <h2>Compras</h2>
+          <div class="toolbar"><input id="comprasSearch" placeholder="Buscar por nombre, DNI o pedido..." aria-label="Buscar cliente"><button class="light" onclick="filterOrders()">Buscar</button></div>
+          <table class="table" id="ordersTable" aria-label="Lista de compras"></table>
+        </section>
+      </div>
+
+      <!-- ===== BIZUM ===== -->
+      <div id="bizum" class="tab">
+        <section class="card"><h2>Pendientes Bizum</h2><div id="pendingBizum"></div></section>
+      </div>
+
+      <!-- ===== BUSCAR ===== -->
+      <div id="buscar" class="tab">
+        <section class="card">
+          <h2>Buscar entrada</h2>
+          <div class="toolbar"><input id="searchInput" placeholder="DNI, nombre, pedido, entrada" aria-label="Buscar entrada"><button id="searchBtn" class="danger">Buscar</button></div>
+          <div id="searchResults"></div>
+        </section>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Edit Event Modal -->
+  <div id="editEventOverlay" class="overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal small">
+      <div class="modalHead">
+        <h2>Editar evento</h2>
+        <button class="closeBtn" onclick="$('editEventOverlay').classList.add('hidden')" aria-label="Cerrar">&times;</button>
+      </div>
+      <input type="hidden" id="editEventId">
+      <label for="editEventNombre">Nombre
+        <input id="editEventNombre" type="text" required>
+      </label>
+      <label for="editEventFecha">Fecha
+        <input id="editEventFecha" type="date" required>
+      </label>
+      <label for="editEventHora">Hora
+        <input id="editEventHora" type="time" required>
+      </label>
+      <label for="editEventEstado">Estado
+        <select id="editEventEstado">
+          <option value="activo">🟢 Activo</option>
+          <option value="oculto">🟡 Oculto</option>
+          <option value="cerrado">🔴 Cerrado</option>
+        </select>
+      </label>
+      <label for="editEventDesc">Descripción
+        <input id="editEventDesc" type="text" placeholder="Opcional">
+      </label>
+      <button class="primary" onclick="saveEditEvent()">Guardar cambios</button>
+    </div>
+  </div>
+
+  <!-- Ticket Modal -->
+  <div id="ticketOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="ticketTitle">
+    <div class="modal ticketsModal">
+      <div class="modalHead">
+        <div><h2 id="ticketTitle">Documento de entrada</h2></div>
+        <div class="ticketActions">
+          <button id="printTickets" class="light printBtn">Imprimir</button>
+          <button id="downloadPdf" class="primary printBtn">📥 Descargar PDF</button>
+          <button id="closeTickets" class="closeBtn" aria-label="Cerrar">&times;</button>
+        </div>
+      </div>
+      <div id="ticketsList"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/ticketDocument.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

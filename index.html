@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Compra de entradas para Teatro Cardenio - Asociación Carnaval">
+  <title>Teatro Cardenio | Entrada integrada</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">
+      <img src="logo%20(2).jpeg" alt="Cardenio ACA" class="brandLogo">
+      <div>
+        <strong>Asociación Carnaval</strong>
+        <small>Teatro Cardenio · Entrada con QR</small>
+      </div>
+    </div>
+    <div class="topRight">
+      <label for="eventId">Función</label>
+      <select id="eventId" aria-label="Seleccionar función"></select>
+      <button id="adminLoginBtn" aria-label="Acceso administrador">Admin</button>
+    </div>
+  </header>
+
+  <main class="shell" role="main">
+    <section class="mainCard" aria-label="Selección de butacas">
+      <div class="mapHeader">
+        <div>
+          <h1>Elige tus butacas</h1>
+          <p>Al finalizar la compra se genera el documento de entrada con QR.</p>
+        </div>
+        <div class="legend" role="img" aria-label="Leyenda de estados de butaca">
+          <span><i class="free"></i> Libre</span>
+          <span><i class="sel"></i> Seleccionada</span>
+          <span><i class="sold"></i> Vendida</span>
+          <span><i class="pending"></i> Pendiente</span>
+          <span><i class="blocked"></i> Bloqueada</span>
+        </div>
+      </div>
+
+      <div id="noEvents" class="emptyState hidden">No hay funciones activas.</div>
+
+      <nav class="zoneChooser" aria-label="Zonas del teatro">
+        <button data-view="patio" class="zoneCard active" aria-pressed="true"><strong>Patio</strong></button>
+        <button data-view="preferencia" class="zoneCard" aria-pressed="false"><strong>Preferencia</strong></button>
+        <button data-view="palcos" class="zoneCard" aria-pressed="false"><strong>Palcos</strong></button>
+        <button data-view="completo" class="zoneCard" aria-pressed="false"><strong>Vista completa</strong></button>
+      </nav>
+
+      <div class="helpBar">
+        <span id="viewTitle">Patio</span>
+        <strong>Selecciona una butaca libre</strong>
+      </div>
+
+      <div id="mapArea" class="mapArea" role="region" aria-label="Plano del teatro">
+        <div id="seatMap"></div>
+      </div>
+    </section>
+
+    <aside class="sidePanel" aria-label="Resumen de compra">
+      <section class="card">
+        <h2>Tu compra</h2>
+        <div class="stat">
+          <span>Función</span>
+          <strong id="summaryEvent">Sin función</strong>
+        </div>
+        <div class="stat">
+          <span>Seleccionadas</span>
+          <strong id="count">0</strong>
+        </div>
+        <div class="stat">
+          <span>Total</span>
+          <strong id="total">0 €</strong>
+        </div>
+        <div id="selectedList" class="selectedList" aria-live="polite"></div>
+        <button id="checkout" class="primary" disabled>Continuar compra</button>
+        <button id="clear" class="light">Limpiar selección</button>
+      </section>
+    </aside>
+  </main>
+
+  <!-- Login Modal -->
+  <div id="loginOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+    <div class="modal small">
+      <div class="modalHead">
+        <h2 id="loginTitle">Acceso administrador</h2>
+        <button id="closeLogin" class="closeBtn" aria-label="Cerrar">&times;</button>
+      </div>
+      <label for="adminEmail">Email
+        <input id="adminEmail" type="email" autocomplete="email" required>
+      </label>
+      <label for="adminPassword">Contraseña
+        <input id="adminPassword" type="password" autocomplete="current-password" required>
+      </label>
+      <button id="doLogin" class="primary">Entrar</button>
+    </div>
+  </div>
+
+  <!-- Checkout Modal -->
+  <div id="checkoutOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle">
+    <div class="modal">
+      <div class="modalHead">
+        <div>
+          <h2 id="checkoutTitle">Finalizar compra</h2>
+          <p>DNI obligatorio por entrada.</p>
+        </div>
+        <button id="closeCheckout" class="closeBtn" aria-label="Cerrar">&times;</button>
+      </div>
+
+      <div class="steps" role="progressbar" aria-valuenow="1" aria-valuemin="1" aria-valuemax="3">
+        <span id="step1" class="step active">1. Comprador</span>
+        <span id="step2" class="step">2. Asistentes</span>
+        <span id="step3" class="step">3. Pago</span>
+      </div>
+
+      <!-- Step 1: Buyer -->
+      <section id="buyerStep">
+        <div class="functionNotice">
+          <strong>Función:</strong> <span id="checkoutEventName"></span>
+        </div>
+        <div class="formGrid">
+          <label for="buyerName">Nombre *
+            <input id="buyerName" autocomplete="given-name" required>
+          </label>
+          <label for="buyerSurname">Apellidos *
+            <input id="buyerSurname" autocomplete="family-name" required>
+          </label>
+          <label for="buyerDni">DNI *
+            <input id="buyerDni" maxlength="9" inputmode="text" autocomplete="off" required>
+          </label>
+          <label for="buyerEmail">Email *
+            <input id="buyerEmail" type="email" autocomplete="email" required>
+          </label>
+          <label for="buyerPhone">Teléfono *
+            <input id="buyerPhone" type="tel" inputmode="tel" autocomplete="tel" required>
+          </label>
+        </div>
+        <label class="copyBuyer">
+          <input id="buyerAttends" type="checkbox" checked> El comprador ocupa la primera entrada
+        </label>
+        <div class="modalActions">
+          <button id="goAttendees" class="primary">Continuar</button>
+        </div>
+      </section>
+
+      <!-- Step 2: Attendees -->
+      <section id="attendeesStep" class="hidden">
+        <h3>Datos de cada entrada</h3>
+        <div id="attendeeForms" class="attendeeForms"></div>
+        <div class="modalActions">
+          <button id="backBuyer" class="light">Atrás</button>
+          <button id="goPayment" class="primary">Continuar al pago</button>
+        </div>
+      </section>
+
+      <!-- Step 3: Payment -->
+      <section id="paymentStep" class="hidden">
+        <h3>Resumen y método de pago</h3>
+        <div id="paymentSummary" class="paymentSummary"></div>
+        <div class="paymentMethods">
+          <label>
+            <input type="radio" name="payMethod" value="bizum" checked>
+            <div>
+              <strong>Bizum</strong>
+              <small>Pendiente hasta confirmación admin</small>
+            </div>
+          </label>
+          <label>
+            <input type="radio" name="payMethod" value="banco">
+            <div>
+              <strong>Banco / tarjeta</strong>
+              <small>Genera entrada al instante</small>
+            </div>
+          </label>
+        </div>
+        <div class="modalActions">
+          <button id="backAttendees" class="light">Atrás</button>
+          <button id="finishOrder" class="primary">Crear pedido</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Ticket Modal -->
+  <div id="ticketOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="ticketTitle">
+    <div class="modal ticketsModal">
+      <div class="modalHead">
+        <div>
+          <h2 id="ticketTitle">Documento de entrada</h2>
+          <p>Entrada lista para imprimir o guardar como PDF.</p>
+        </div>
+        <div class="ticketActions">
+          <button id="printTickets" class="light printBtn">Imprimir</button>
+          <button id="downloadPdf" class="primary printBtn">📥 Descargar PDF</button>
+          <button id="closeTickets" class="closeBtn" aria-label="Cerrar">&times;</button>
+        </div>
+      </div>
+      <div id="ticketsList"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/ticketDocument.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
