@@ -36,15 +36,32 @@ function numSeats(filas, butIzq, butDer) { return filas * (butIzq + butDer); }
    INIT
    ============================================ */
 async function init() {
-  const { data: { session } } = await sb.auth.getSession();
+  let session;
+  try {
+    const res = await sb.auth.getSession();
+    session = res.data.session;
+  } catch(e) { console.error('getSession error:', e); }
+
   if (!session) {
     $('loginOverlay').classList.remove('hidden');
     $('loginForm').addEventListener('submit', e => { e.preventDefault(); login(); });
     return;
   }
-  const { data: p } = await sb.from('profiles').select('rol').eq('id', session.user.id).single();
-  if (!p || !['superadmin', 'taquilla'].includes(p.rol)) { toast('Sin permisos', 'error'); return location.href = 'index.html'; }
-  showAdmin();
+
+  try {
+    const { data: p } = await sb.from('profiles').select('rol').eq('id', session.user.id).single();
+    if (!p || !['superadmin', 'taquilla'].includes(p.rol)) { toast('Sin permisos', 'error'); return location.href = 'index.html'; }
+  } catch(e) { console.warn('Profile check error:', e); }
+
+  try { bind(); } catch(e) { console.error('Bind error:', e); }
+  await loadEvents().catch(e => console.error(e));
+  await loadValidadosEvents().catch(e => console.error(e));
+  await refresh().catch(e => console.error(e));
+  await taquillaLoadSeats().catch(e => console.error(e));
+  try { wizardUpdatePreviews(); } catch(e) {}
+  try { bindWizardInputs(); } catch(e) {}
+  const excelInput = $('wizExcelInput');
+  if (excelInput) excelInput.addEventListener('paste', () => { setTimeout(parseExcelLayout, 100); });
 }
 
 /* ============================================
@@ -65,7 +82,30 @@ function bind() {
   $('logoutAdmin').onclick = async () => { await sb.auth.signOut(); location.href = 'index.html'; };
   $('eventId').onchange = async () => { await refresh(); await taquillaLoadStatuses(); };
   $('searchBtn').onclick = search;
-  $('closeTickets').onclick = () => { $('ticketOverlay').classList.add('hidden'); document.body.classList.remove('modalOpen'); };
+  $('closeTickets').onclick = () => {
+    $('ticketOverlay').classList.add('hidden');
+    document.body.classList.remove('modalOpen');
+    const actionsBar = $('ticketActionsBar');
+    if (actionsBar) actionsBar.style.display = 'none';
+    const fab = $('fabQr');
+    if (fab) fab.style.display = 'none';
+    currentOrderForActions = null;
+    currentTicketsForActions = [];
+  };
+  $('qrRegenBtn').onclick = () => {
+    if (currentTicketsForActions.length === 1) {
+      regenerateTicketQr(currentTicketsForActions[0].id);
+    } else if (currentTicketsForActions.length > 1) {
+      toast('Selecciona una entrada concreta para regenerar su QR.', 'info');
+    }
+  };
+  $('whatsappBtn').onclick = () => {
+    if (currentTicketsForActions.length === 1) {
+      sendWhatsApp(currentTicketsForActions[0].id);
+    } else if (currentTicketsForActions.length > 1) {
+      toast('Usa el botón WhatsApp en la tabla de entradas para cada una.', 'info');
+    }
+  };
   const compSearch = $('comprasSearch');
   if (compSearch) compSearch.addEventListener('keydown', e => { if (e.key === 'Enter') filterOrders(); });
   $('printTickets').onclick = () => {
@@ -83,7 +123,14 @@ function bind() {
   });
   $('taquillaGenerateBtn').onclick = taquillaGenerate;
   $('taquillaClearBtn').onclick = taquillaClear;
-  document.querySelectorAll('input[name="taquillaPayType"]').forEach(r => { r.onchange = taquillaRenderSelected; });
+  document.querySelectorAll('input[name="taquillaPayType"]').forEach(r => { r.onchange = taquillaRenderSelected });
+
+  const vSel = $('validadosEventSelect');
+  if (vSel) {
+    vSel.onchange = () => loadValidados(vSel.value);
+  }
+  const vSearch = $('validadosSearch');
+  if (vSearch) vSearch.addEventListener('keydown', e => { if (e.key === 'Enter') filterValidados(); });
 }
 
 /* ============================================
@@ -356,7 +403,234 @@ async function cancelOrder(id){
   toast('Pedido cancelado. Butacas liberadas.','success');
   await refresh();
 }
-function showOrder(id){const o=orders.find(x=>x.id===id);if(!o)return;const isInv=(o.numero_pedido||'').startsWith('TAQ-')&&Number(o.total)===0;renderTicketDocuments($('ticketsList'),o.tickets||[],eventInfo()?.text||'',o.numero_pedido,isInv);$('ticketOverlay').classList.remove('hidden');document.body.classList.add('modalOpen');}
+/* ============================================
+   CÓDIGOS VALIDADOS
+   ============================================ */
+let validadosTickets = [];
+
+async function loadValidadosEvents() {
+  const { data } = await sb.from('events').select('*').order('fecha', { ascending: false });
+  const sel = $('validadosEventSelect');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Selecciona evento...</option>' +
+    (data || []).map(e => `<option value="${e.id}">${e.nombre} · ${e.fecha}</option>`).join('');
+}
+
+async function loadValidados(eventId) {
+  const empty = $('validadosEmpty');
+  const tableWrap = $('validadosTableWrap');
+  const stats = $('validadosStats');
+
+  if (!eventId) {
+    empty.style.display = '';
+    empty.textContent = 'Selecciona un evento para ver los códigos validados.';
+    tableWrap.style.display = 'none';
+    stats.style.display = 'none';
+    validadosTickets = [];
+    return;
+  }
+
+  const { data: tickets } = await sb.from('tickets')
+    .select('*, seats(zona, fila, butaca), orders(numero_pedido, comprador_telefono)')
+    .eq('event_id', eventId)
+    .order('created_at', { ascending: true });
+
+  validadosTickets = tickets || [];
+
+  const total = validadosTickets.length;
+  const usadas = validadosTickets.filter(t => t.estado === 'usada').length;
+  const pendientes = validadosTickets.filter(t => t.estado === 'generada').length;
+  const canceladas = validadosTickets.filter(t => t.estado === 'cancelada').length;
+
+  $('vTotal').textContent = total;
+  $('vUsadas').textContent = usadas;
+  $('vPendientes').textContent = pendientes;
+  $('vCanceladas').textContent = canceladas;
+
+  empty.style.display = 'none';
+  stats.style.display = '';
+  tableWrap.style.display = '';
+
+  renderValidadosTable(validadosTickets);
+}
+
+function renderValidadosTable(list) {
+  const table = $('validadosTable');
+  if (!list.length) {
+    table.innerHTML = '<tr><td style="padding:20px;text-align:center;color:#94a3b8">No hay entradas registradas para este evento.</td></tr>';
+    return;
+  }
+
+  table.innerHTML = `<tr>
+    <th>Estado</th>
+    <th>Nº Entrada</th>
+    <th>Nombre</th>
+    <th>Apellidos</th>
+    <th>DNI</th>
+    <th>Zona</th>
+    <th>Butaca</th>
+    <th>Pedido</th>
+    <th>Acciones</th>
+  </tr>` + list.map(t => {
+    const seat = t.seats || {};
+    const order = t.orders || {};
+    let badgeClass = 'badgeGenerada';
+    let badgeLabel = 'Pendiente';
+    if (t.estado === 'usada') { badgeClass = 'badgeUsada'; badgeLabel = 'Validada'; }
+    else if (t.estado === 'cancelada') { badgeClass = 'badgeCancelada'; badgeLabel = 'Cancelada'; }
+    else if (t.estado === 'generada') { badgeClass = 'badgeGenerada'; badgeLabel = 'Pendiente'; }
+    else if (t.estado === 'pendiente_bizum') { badgeClass = 'badgePendiente'; badgeLabel = 'Pendiente'; }
+
+    const canReactivate = t.estado === 'usada';
+    const phone = order.comprador_telefono || '';
+    const qrUrl = PUBLIC_TICKET_BASE_URL + '?token=' + encodeURIComponent(t.qr_token || '');
+    const whatsappMsg = encodeURIComponent(`🎭 *Entrada Teatro Cardenio*\n\nHola ${t.nombre}, aquí tienes tu nueva entrada:\n\n👤 ${t.nombre} ${t.apellidos}\n🪪 ${t.dni}\n🪑 ${seat.zona || ''} F${seat.fila || ''} B${seat.butaca || ''}\n\n🔗 ${qrUrl}\n\nMuestra este enlace o código QR en la entrada.`);
+    const canSendWhatsapp = phone && (t.estado === 'generada' || t.estado === 'usada');
+
+    return `<tr>
+      <td><span class="${badgeClass}">${badgeLabel}</span></td>
+      <td><code>${t.numero_entrada || ''}</code></td>
+      <td>${t.nombre || ''}</td>
+      <td>${t.apellidos || ''}</td>
+      <td><strong>${t.dni || ''}</strong></td>
+      <td>${seat.zona || ''}</td>
+      <td>${seat.fila ? 'F' + seat.fila : ''}${seat.butaca ? ' · B' + seat.butaca : ''}</td>
+      <td><small>${order.numero_pedido || ''}</small></td>
+      <td style="display:flex;gap:4px;flex-wrap:wrap">
+        ${canReactivate ? `<button class="reactivateBtn" onclick="reactivateTicket('${t.id}')">Reactivar</button>` : ''}
+        <button class="qrRegenBtn" style="padding:5px 8px;font-size:11px;border-radius:6px" onclick="regenerateTicketQr('${t.id}')">🔄 QR</button>
+        ${canSendWhatsapp ? `<a class="whatsappBtn" style="padding:5px 8px;font-size:11px;border-radius:6px;text-decoration:none;display:inline-flex" href="https://wa.me/${phone.replace(/\D/g,'')}?text=${whatsappMsg}" target="_blank">📱 WhatsApp</a>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterValidados() {
+  const q = ($('validadosSearch')?.value || '').toLowerCase().trim();
+  if (!q) return renderValidadosTable(validadosTickets);
+  const filtered = validadosTickets.filter(t => {
+    const txt = ((t.nombre||'') + ' ' + (t.apellidos||'') + ' ' + (t.dni||'') + ' ' + (t.numero_entrada||'')).toLowerCase();
+    return txt.includes(q);
+  });
+  renderValidadosTable(filtered);
+}
+
+async function reactivateTicket(id) {
+  if (!confirm('¿Reactivar esta entrada? Volverá a estar pendiente de validación.')) return;
+
+  const { error } = await sb.from('tickets').update({ estado: 'generada' }).eq('id', id);
+  if (error) return toast('Error: ' + error.message, 'error');
+
+  toast('Entrada reactivada correctamente', 'success');
+
+  const eventId = $('validadosEventSelect')?.value;
+  if (eventId) await loadValidados(eventId);
+}
+
+/* ============================================
+   REGENERAR QR Y ENVIAR POR WHATSAPP
+   ============================================ */
+let currentOrderForActions = null;
+let currentTicketsForActions = [];
+
+async function regenerateTicketQr(ticketId) {
+  if (!confirm('¿Generar un nuevo código QR para esta entrada? El código anterior dejará de funcionar.')) return;
+
+  const newToken = crypto.randomUUID();
+  const newShort = (newToken || '').replace(/-/g, '').substring(0, 8).toUpperCase();
+
+  const { error } = await sb.from('tickets')
+    .update({ qr_token: newToken, short_code: newShort, estado: 'generada' })
+    .eq('id', ticketId);
+
+  if (error) return toast('Error al regenerar QR: ' + error.message, 'error');
+
+  toast('QR regenerado correctamente', 'success');
+
+  const eventId = $('validadosEventSelect')?.value;
+  if (eventId) await loadValidados(eventId);
+
+  if (currentOrderForActions) {
+    const { data: updatedTickets } = await sb.from('tickets')
+      .select('*, seats(*)')
+      .eq('order_id', currentOrderForActions.id);
+    if (updatedTickets) {
+      currentTicketsForActions = updatedTickets;
+      renderTicketDocuments($('ticketsList'), currentTicketsForActions, eventInfo()?.text || '', currentOrderForActions.numero_pedido, false);
+      regenerateQrCodes(currentTicketsForActions);
+    }
+  }
+}
+
+function regenerateQrCodes(tickets) {
+  setTimeout(() => {
+    tickets.forEach((ticket, index) => {
+      const target = document.getElementById('ticketQr-' + index);
+      if (!target) return;
+      target.innerHTML = '';
+      try {
+        new QRCode(target, {
+          text: ticketQrUrl(ticket),
+          width: 140,
+          height: 140,
+          colorDark: '#1a2332',
+          colorLight: '#ffffff'
+        });
+      } catch (e) { target.textContent = 'Error QR'; }
+    });
+  }, 100);
+}
+
+function sendWhatsApp(ticketId) {
+  const t = currentTicketsForActions.find(x => x.id === ticketId);
+  if (!t) return;
+
+  const order = currentOrderForActions || {};
+  const phone = (order.comprador_telefono || '').replace(/\D/g, '');
+  if (!phone) return toast('No hay teléfono de contacto', 'error');
+
+  const seat = t.seats || {};
+  const qrUrl = ticketQrUrl(t);
+  const msg = encodeURIComponent(
+    `🎭 *Entrada Teatro Cardenio*\n\n` +
+    `Hola ${t.nombre}, aquí tienes tu entrada:\n\n` +
+    `👤 ${t.nombre} ${t.apellidos}\n` +
+    `🪪 ${t.dni}\n` +
+    `🪑 ${seat.zona || ''} F${seat.fila || ''} B${seat.butaca || ''}\n\n` +
+    `🔗 ${qrUrl}\n\n` +
+    `Muestra este enlace o código QR en la entrada.`
+  );
+
+  window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+}
+
+function showOrder(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  const isInv = (o.numero_pedido || '').startsWith('TAQ-') && Number(o.total) === 0;
+  currentOrderForActions = o;
+  currentTicketsForActions = o.tickets || [];
+
+  renderTicketDocuments($('ticketsList'), currentTicketsForActions, eventInfo()?.text || '', o.numero_pedido, isInv);
+  regenerateQrCodes(currentTicketsForActions);
+
+  const actionsBar = $('ticketActionsBar');
+  const fab = $('fabQr');
+  if (actionsBar) actionsBar.style.display = '';
+  if (fab) {
+    fab.style.display = '';
+    fab.onclick = () => {
+      if (currentTicketsForActions.length === 1) {
+        regenerateTicketQr(currentTicketsForActions[0].id);
+      } else if (currentTicketsForActions.length > 1) {
+        toast('Hay varias entradas. Usa el botón 🔄 QR en cada una.', 'info');
+      }
+    };
+  }
+
+  $('ticketOverlay').classList.remove('hidden');
+  document.body.classList.add('modalOpen');
+}
 function search(){const q=$('searchInput').value.toLowerCase().trim();if(!q)return toast('Introduce un término.','info');const res=[];orders.forEach(o=>(o.tickets||[]).forEach(t=>{const txt=(o.numero_pedido+' '+t.numero_entrada+' '+t.nombre+' '+t.apellidos+' '+t.dni).toLowerCase();if(txt.includes(q))res.push({o,t});}));$('searchResults').innerHTML=res.length?`<table class="table"><tr><th>Entrada</th><th>Asistente</th><th>Pedido</th><th></th></tr>${res.map(x=>`<tr><td>${x.t.numero_entrada}</td><td>${x.t.nombre} ${x.t.apellidos}<br><small>${x.t.dni}</small></td><td>${x.o.numero_pedido}</td><td><button class="orderBtn" onclick="showOrder('${x.o.id}')">Ver</button></td></tr>`).join('')}</table>`:'<div class="emptyState">No encontrado.</div>';}
 
 /* ============================================
@@ -661,16 +935,19 @@ async function login() {
 }
 
 async function showAdmin() {
-  bind();
-  await loadEvents();
-  await refresh();
-  await taquillaLoadSeats();
-  wizardUpdatePreviews();
-  bindWizardInputs();
+  try { bind(); } catch(e) { console.error('Bind error:', e); }
+  try { await loadEvents(); } catch(e) { console.error('LoadEvents error:', e); }
+  try { await loadValidadosEvents(); } catch(e) { console.error('LoadValidadosEvents error:', e); }
+  try { await refresh(); } catch(e) { console.error('Refresh error:', e); }
+  try { await taquillaLoadSeats(); } catch(e) { console.error('TaquillaSeats error:', e); }
+  try { wizardUpdatePreviews(); } catch(e) {}
+  try { bindWizardInputs(); } catch(e) {}
   const excelInput = $('wizExcelInput');
   if (excelInput) {
     excelInput.addEventListener('paste', () => { setTimeout(parseExcelLayout, 100); });
   }
 }
+
+
 
 init();

@@ -182,6 +182,7 @@
   <div id="mount" class="loader">Comprobando entrada...</div>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="js/supabaseClient.js"></script>
   <script>
     const mount = document.getElementById('mount');
@@ -279,13 +280,34 @@
               <span>Pedido</span>
               <strong>${order.numero_pedido || ''}</strong>
             </div>
+            <div class="item full" style="background:#f1f5f9;text-align:center">
+              <span style="color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;font-weight:700;display:block;margin-bottom:4px">Código de validación (introducir manual si el QR no se lee)</span>
+              <strong style="font-family:'Courier New',monospace;font-size:20px;letter-spacing:0.1em;color:#1a2332">${ticket.short_code || (token || '').replace(/-/g, '').substring(0, 8).toUpperCase()}</strong>
+            </div>
           </div>
+          <div id="ticketQrVerify" style="text-align:center;margin:20px 0 10px"><p style="color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;font-weight:700;margin-bottom:8px">Código QR de entrada</p></div>
           <div class="actions">
             <button class="btn" onclick="location.reload()">Volver a comprobar</button>
             <button class="btn secondary" onclick="history.back()">Volver</button>
           </div>
         </div>
         <div class="footer">Verificación online conectada a Supabase.</div>`;
+
+      if (isGenerated) {
+        setTimeout(() => {
+          const qrEl = document.getElementById('ticketQrVerify');
+          if (qrEl) {
+            new QRCode(qrEl, {
+              text: location.href,
+              width: 180,
+              height: 180,
+              colorDark: '#1a2332',
+              colorLight: '#ffffff',
+              correctLevel: QRCode.CorrectLevel.H
+            });
+          }
+        }, 200);
+      }
     }
 
     verifyTicket();

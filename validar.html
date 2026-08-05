@@ -432,7 +432,7 @@
     </div>
 
     <div class="manual-input">
-      <input type="text" id="manualInput" placeholder="Token manual..." autocomplete="off">
+      <input type="text" id="manualInput" placeholder="Pega el código (ej: 550e8400-e29b...)" autocomplete="off">
       <button id="manualBtn">Validar</button>
     </div>
   </div>
@@ -534,13 +534,26 @@
       scanning = true;
       playBeep(800, 100);
 
-      const { data: ticket, error } = await window.sb
-        .from('tickets')
-        .select('*, seats(*), orders(*, events(*))')
-        .eq('qr_token', token)
-        .maybeSingle();
+      let ticket = null;
+      const isShort = token.length === 8 && /^[A-F0-9]+$/i.test(token);
 
-      if (error || !ticket) {
+      if (isShort) {
+        const { data } = await window.sb
+          .from('tickets')
+          .select('*, seats(*), orders(*, events(*))')
+          .eq('short_code', token.toUpperCase())
+          .maybeSingle();
+        ticket = data;
+      } else {
+        const { data } = await window.sb
+          .from('tickets')
+          .select('*, seats(*), orders(*, events(*))')
+          .eq('qr_token', token)
+          .maybeSingle();
+        ticket = data;
+      }
+
+      if (!ticket) {
         flashScreen('red');
         playBeep(300, 300, 3);
         countError++;
@@ -548,13 +561,17 @@
         showResult('invalid', {
           icon: '❌',
           title: 'Entrada no válida',
-          subtitle: 'Este código QR no corresponde a ninguna entrada.',
+          subtitle: 'Este código no corresponde a ninguna entrada.',
           info: null
         });
         scanning = false;
         return;
       }
 
+      processValidatedTicket(ticket);
+    }
+
+    function processValidatedTicket(ticket) {
       currentTicket = ticket;
       const order = ticket.orders || {};
       const ticketEvent = order.events || {};
@@ -730,13 +747,19 @@
     window.addEventListener('offline', () => { document.getElementById('statusDot').className = 'status-dot offline'; });
 
     document.getElementById('manualBtn').onclick = () => {
-      const val = document.getElementById('manualInput').value.trim();
-      if (val) validateToken(val);
+      const raw = document.getElementById('manualInput').value.trim();
+      if (!raw) return;
+      let tok = raw;
+      try { tok = new URL(raw).searchParams.get('token') || raw; } catch {}
+      validateToken(tok.replace(/\s/g, ''));
     };
     document.getElementById('manualInput').addEventListener('keydown', e => {
       if (e.key === 'Enter') {
-        const val = e.target.value.trim();
-        if (val) validateToken(val);
+        const raw = e.target.value.trim();
+        if (!raw) return;
+        let tok = raw;
+        try { tok = new URL(raw).searchParams.get('token') || raw; } catch {}
+        validateToken(tok.replace(/\s/g, ''));
       }
     });
 

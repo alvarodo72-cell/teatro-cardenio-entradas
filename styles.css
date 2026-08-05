@@ -1227,6 +1227,31 @@ body.modalOpen { overflow: hidden; position: fixed; width: 100%; }
   font-weight: 600;
   font-size: 12px;
 }
+.ticketToken {
+  margin-top: 10px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  text-align: center;
+}
+.ticketToken span {
+  display: block;
+  color: #64748b;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.tokenCode {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1a2332;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.05em;
+  word-break: break-all;
+}
 
 /* --- QR Area --- */
 .ticketQrArea {

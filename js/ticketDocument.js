@@ -62,6 +62,10 @@ function renderTicketDocuments(mount, tickets, eventText, orderNumber = '', isIn
           </div>`}
           <p class="ticketNumber">${t.numero_entrada}</p>
           <p class="orderNumber">${orderNumber}</p>
+          <div class="ticketToken">
+            <span>Código de validación</span>
+            <strong class="tokenCode">${t.short_code || (t.qr_token || '').replace(/-/g, '').substring(0, 8).toUpperCase()}</strong>
+          </div>
         </div>
         <div class="ticketQrArea">
           <div id="ticketQr-${i}" class="ticketQr"></div>

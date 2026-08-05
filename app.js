@@ -14,6 +14,9 @@ let currentView = 'patio',
 function validDni(d) {
   return /^[0-9]{8}[A-Za-z]$/.test((d || '').trim());
 }
+function shortCode(token) {
+  return (token || '').replace(/-/g, '').substring(0, 8).toUpperCase();
+}
 
 function err(el, m) {
   el.querySelector('.errorBox')?.remove();
@@ -464,6 +467,7 @@ async function createOrder() {
       apellidos: a.apellidos,
       dni: a.dni,
       qr_token: qrToken,
+      short_code: shortCode(qrToken),
       estado: estado === 'pagado' ? 'generada' : 'pendiente'
     }).select('*, seats(*)').single();
 
