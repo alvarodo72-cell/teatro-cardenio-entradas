@@ -37,19 +37,14 @@ function numSeats(filas, butIzq, butDer) { return filas * (butIzq + butDer); }
    ============================================ */
 async function init() {
   const { data: { session } } = await sb.auth.getSession();
-  if (!session) return location.href = 'index.html';
+  if (!session) {
+    $('loginOverlay').classList.remove('hidden');
+    $('loginForm').addEventListener('submit', e => { e.preventDefault(); login(); });
+    return;
+  }
   const { data: p } = await sb.from('profiles').select('rol').eq('id', session.user.id).single();
   if (!p || !['superadmin', 'taquilla'].includes(p.rol)) { toast('Sin permisos', 'error'); return location.href = 'index.html'; }
-  bind();
-  await loadEvents();
-  await refresh();
-  await taquillaLoadSeats();
-  wizardUpdatePreviews();
-  bindWizardInputs();
-  const excelInput = $('wizExcelInput');
-  if (excelInput) {
-    excelInput.addEventListener('paste', () => { setTimeout(parseExcelLayout, 100); });
-  }
+  showAdmin();
 }
 
 /* ============================================
@@ -341,7 +336,8 @@ function renderOrders(filter = '') {
   $('ordersTable').innerHTML = `<tr><th>Pedido</th><th>Canal</th><th>Comprador</th><th>Entradas</th><th>Total</th><th>Estado</th><th>Acciones</th></tr>
     ${list.map(o => { const isTaq=(o.numero_pedido||'').startsWith('TAQ-'); const isInv=isTaq&&Number(o.total)===0;
       const canal=isInv?'🎁 Invitación':isTaq?'💵 Taquilla':o.metodo_pago==='bizum'?'📲 Bizum':'🌐 Web';
-      return `<tr><td>${o.numero_pedido}</td><td>${canal}</td><td>${o.comprador_nombre} ${o.comprador_apellidos}<br><small>${o.comprador_dni}</small></td><td>${o.tickets?.length||0}</td><td>${o.total} €</td><td>${o.estado}</td><td>${o.estado==='pendiente_bizum'?`<button class="orderBtn" onclick="confirmBizum('${o.id}')">Confirmar Bizum</button>`:`<button class="orderBtn" onclick="showOrder('${o.id}')">Ver entrada</button>`}</td></tr>`;}).join('')}`;
+      const canCancel=o.estado==='pagado'||(isTaq&&o.estado==='pagado');
+      return `<tr><td>${o.numero_pedido}</td><td>${canal}</td><td>${o.comprador_nombre} ${o.comprador_apellidos}<br><small>${o.comprador_dni}</small></td><td>${o.tickets?.length||0}</td><td>${o.total} €</td><td>${o.estado}</td><td class="orderActions">${o.estado==='pendiente_bizum'?`<button class="orderBtn" onclick="confirmBizum('${o.id}')">Confirmar Bizum</button>`:`<button class="orderBtn" onclick="showOrder('${o.id}')">Ver entrada</button>`}${canCancel?`<button class="orderBtn danger" onclick="cancelOrder('${o.id}')">Cancelar</button>`:''}</td></tr>`;}).join('')}`;
 }
 function filterOrders() { const q = ($('comprasSearch')?.value || '').trim(); renderOrders(q); }
 function renderPending() {
@@ -350,6 +346,16 @@ function renderPending() {
 }
 function updateBizumBadge(){const c=orders.filter(o=>o.estado==='pendiente_bizum').length;const b=$('bizumBadge');if(b){b.textContent=c;b.style.display=c>0?'':'none';}}
 async function confirmBizum(id){const o=orders.find(x=>x.id===id);if(!o)return;await sb.from('orders').update({estado:'pagado'}).eq('id',id);await sb.from('tickets').update({estado:'generada'}).eq('order_id',id);for(const t of o.tickets||[])await sb.from('event_seats').upsert({event_id:o.event_id,seat_id:t.seat_id,estado:'vendida',precio:t.seats?.precio_base||0},{onConflict:'event_id,seat_id'});toast('Bizum confirmado.','success');await refresh();showOrder(id);}
+async function cancelOrder(id){
+  const o=orders.find(x=>x.id===id);
+  if(!o)return;
+  if(!confirm(`¿Cancelar el pedido ${o.numero_pedido}? Las entradas quedarán anuladas y las butacas se liberarán.`))return;
+  await sb.from('orders').update({estado:'cancelado'}).eq('id',id);
+  await sb.from('tickets').update({estado:'cancelada'}).eq('order_id',id);
+  for(const t of o.tickets||[])await sb.from('event_seats').upsert({event_id:o.event_id,seat_id:t.seat_id,estado:'libre',precio:0},{onConflict:'event_id,seat_id'});
+  toast('Pedido cancelado. Butacas liberadas.','success');
+  await refresh();
+}
 function showOrder(id){const o=orders.find(x=>x.id===id);if(!o)return;const isInv=(o.numero_pedido||'').startsWith('TAQ-')&&Number(o.total)===0;renderTicketDocuments($('ticketsList'),o.tickets||[],eventInfo()?.text||'',o.numero_pedido,isInv);$('ticketOverlay').classList.remove('hidden');document.body.classList.add('modalOpen');}
 function search(){const q=$('searchInput').value.toLowerCase().trim();if(!q)return toast('Introduce un término.','info');const res=[];orders.forEach(o=>(o.tickets||[]).forEach(t=>{const txt=(o.numero_pedido+' '+t.numero_entrada+' '+t.nombre+' '+t.apellidos+' '+t.dni).toLowerCase();if(txt.includes(q))res.push({o,t});}));$('searchResults').innerHTML=res.length?`<table class="table"><tr><th>Entrada</th><th>Asistente</th><th>Pedido</th><th></th></tr>${res.map(x=>`<tr><td>${x.t.numero_entrada}</td><td>${x.t.nombre} ${x.t.apellidos}<br><small>${x.t.dni}</small></td><td>${x.o.numero_pedido}</td><td><button class="orderBtn" onclick="showOrder('${x.o.id}')">Ver</button></td></tr>`).join('')}</table>`:'<div class="emptyState">No encontrado.</div>';}
 
@@ -360,7 +366,7 @@ async function taquillaLoadSeats(){const{data,error}=await sb.from('seats').sele
 async function taquillaLoadStatuses(){taquillaStatuses.clear();const f=eventInfo();if(!f){taquillaRenderMap();return;}const{data}=await sb.from('event_seats').select('estado, seats(coord)').eq('event_id',f.id);(data||[]).forEach(r=>{if(r.seats?.coord)taquillaStatuses.set(r.seats.coord,r.estado);});taquillaRenderMap();}
 function taquillaRefresh(){taquillaRenderMap();taquillaRenderSelected();}
 function taquillaRenderMap(){const map=$('taquillaSeatMap');if(!map)return;map.innerHTML='';const f=eventInfo();if(!f){map.innerHTML='<div class="emptyState" style="margin:40px">Selecciona una función.</div>';return;}map.innerHTML='<div class="stage">ESCENARIO</div><div class="zoneTitle">'+(taquillaCurrentView==='completo'?'Vista completa':zones[taquillaCurrentView].title)+'</div>';const vs=taquillaCurrentView==='completo'?['patio','preferencia','palcos']:[taquillaCurrentView];vs.forEach(v=>{if(taquillaCurrentView==='completo')map.insertAdjacentHTML('beforeend','<div class="zoneTitle">'+zones[v].title+'</div>');v==='palcos'?taquillaRenderPalcos(map):taquillaRenderRows(map,v);});}
-function taquillaRenderRows(map,v){for(let r=1;r<=zones[v].rows;r++){const row=document.createElement('div');row.className='row';zones[v].odds.forEach(n=>row.appendChild(taquillaBtn(v,r,n)));row.appendChild(Object.assign(document.createElement('span'),{className:'aisle'}));row.appendChild(Object.assign(document.createElement('span'),{className:'rowLabel',textContent:r}));row.appendChild(Object.assign(document.createElement('span'),{className:'aisle'}));zones[v].evens.forEach(n=>row.appendChild(taquillaBtn(v,r,n)));map.appendChild(row);}}
+function taquillaRenderRows(map,v){const startRow=zones[v].startRow||1;for(let r=startRow;r<=zones[v].rows;r++){let cfg=zones[v];if(zones[v].rowRanges){for(const range of zones[v].rowRanges){if(r>=range.from&&r<=range.to){cfg=range;break;}}}const row=document.createElement('div');row.className='row';cfg.odds.forEach(n=>row.appendChild(taquillaBtn(v,r,n)));row.appendChild(Object.assign(document.createElement('span'),{className:'aisle'}));row.appendChild(Object.assign(document.createElement('span'),{className:'rowLabel',textContent:r}));row.appendChild(Object.assign(document.createElement('span'),{className:'aisle'}));const mainEvens=cfg.evens.filter(n=>n<=18);const extraEvens=cfg.evens.filter(n=>n>18);mainEvens.forEach(n=>row.appendChild(taquillaBtn(v,r,n)));if(extraEvens.length){const gap=document.createElement('span');gap.className='seatGap';row.appendChild(gap);extraEvens.forEach(n=>row.appendChild(taquillaBtn(v,r,n)));}map.appendChild(row);}}
 function taquillaRenderPalcos(map){const w=document.createElement('div');w.className='palcosExcel';palcoGroups.forEach(g=>{const c=document.createElement('div');c.className='palcoCol';c.innerHTML='<h3>'+g.title+'</h3>';g.nums.forEach((n,i)=>c.appendChild(taquillaBtn('palcos',g.key,n,g.title,i+1)));w.appendChild(c);});map.appendChild(w);}
 function taquillaBtn(zone,row,num,labelZone=null,fila=null){const b=document.createElement('button');b.className='seat '+(zone==='preferencia'?'preferencia':zone==='palcos'?'palco':'');b.textContent=num;const coord=zone==='palcos'?`palcos-${row}-${num}`:`${zone}-${row}-${num}`;const st=taquillaStatuses.get(coord);if(st)b.classList.add(st);if(taquillaSelected.has(coord))b.classList.add('selected');b.onclick=()=>{if(st&&st!=='libre')return;if(taquillaSelected.has(coord))taquillaSelected.delete(coord);else taquillaSelected.set(coord,{coord,zone:labelZone||zones[zone].title,fila:fila||row,label:num,price:zones[zone].price});taquillaRenderMap();taquillaRenderSelected();};return b;}
 function taquillaRenderSelected(){const vals=[...taquillaSelected.values()];const list=$('taquillaSelectedList');const formCard=$('taquillaFormCard');const genBtn=$('taquillaGenerateBtn');const payType=getTaquillaPayType();const isInv=payType==='invitacion';if(!vals.length){list.innerHTML='<p class="taquillaEmptyMsg">Selecciona butacas libres.</p>';formCard.style.display='none';genBtn.disabled=true;$('taquillaTotal').textContent='0 €';return;}const sub=isInv?0:vals.reduce((s,v)=>s+v.price,0);const n=vals.length;const g=isInv?0:n*GESTION_FEE;const tot=sub+g;list.innerHTML=vals.map((v,i)=>`<div class="taquillaSeatItem"><div class="seatInfo">${v.zone}<br><small>F${v.fila} · B${v.label}</small></div><span class="seatPrice">${isInv?'Invitación':v.price+' €'}</span><button class="seatRemove" onclick="taquillaRemoveSeat(${i})" title="Quitar">&times;</button></div>`).join('');if(isInv){$('taquillaTotal').textContent='Invitación';$('taquillaTotal').className='taquillaTotalValue invitacion';}else{$('taquillaTotal').innerHTML=`<span class="totalLine"><span>Entradas (${n} × ${vals[0].price}€)</span><strong>${sub.toFixed(2)} €</strong></span><span class="totalLine gestionLine"><span>Gestión (${n} × ${GESTION_FEE}€)</span><strong>${g.toFixed(2)} €</strong></span><span class="totalLine totalFinal"><span>Total</span><strong>${tot.toFixed(2)} €</strong></span>`;$('taquillaTotal').className='taquillaTotalValue';}$('taquillaAttendeeForms').innerHTML=vals.map((v,i)=>`<div class="taquillaAttendeeRow"><h4>Entrada ${i+1} <span class="seatBadge">${v.zone} · F${v.fila} · B${v.label}</span>${isInv?'<span class="invBadge">GRATIS</span>':''}</h4><label>Nombre *<input class="tqName" placeholder="Nombre"></label><label>Apellidos *<input class="tqSurname" placeholder="Apellidos"></label><label>DNI *<input class="tqDni" maxlength="9" placeholder="12345678A"></label></div>`).join('');formCard.style.display='';genBtn.disabled=false;genBtn.textContent=isInv?'🎁 Generar invitación':`💵 Generar entrada · ${tot.toFixed(2)} €`;}
@@ -620,6 +626,51 @@ async function wizardCreate(){
   parsedExcelLayout=null;clearExcelImport();
   wizardGo(1);
   await loadEvents();refresh();
+}
+
+/* ============================================
+   LOGIN
+   ============================================ */
+async function login() {
+  const email = $('adminEmail').value.trim();
+  const password = $('adminPassword').value;
+  const errorDiv = $('loginError');
+
+  errorDiv.classList.add('hidden');
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) {
+    errorDiv.textContent = 'Credenciales incorrectas';
+    errorDiv.classList.remove('hidden');
+    return;
+  }
+
+  const { data: p } = await sb.from('profiles')
+    .select('rol')
+    .eq('id', data.user.id)
+    .single();
+
+  if (!p || !['superadmin', 'taquilla'].includes(p.rol)) {
+    errorDiv.textContent = 'Usuario sin permisos';
+    errorDiv.classList.remove('hidden');
+    return;
+  }
+
+  $('loginOverlay').classList.add('hidden');
+  showAdmin();
+}
+
+async function showAdmin() {
+  bind();
+  await loadEvents();
+  await refresh();
+  await taquillaLoadSeats();
+  wizardUpdatePreviews();
+  bindWizardInputs();
+  const excelInput = $('wizExcelInput');
+  if (excelInput) {
+    excelInput.addEventListener('paste', () => { setTimeout(parseExcelLayout, 100); });
+  }
 }
 
 init();

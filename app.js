@@ -65,6 +65,12 @@ async function loadEvents() {
     `<option value="${e.id}">${e.nombre} · ${e.fecha} · ${String(e.hora).slice(0, 5)}</option>`
   ).join('');
 
+  const urlParams = new URLSearchParams(window.location.search);
+  const preselected = urlParams.get('event');
+  if (preselected && (data || []).some(e => e.id === preselected)) {
+    $('eventId').value = preselected;
+  }
+
   const has = (data || []).length;
   $('noEvents').classList.toggle('hidden', has);
   document.querySelector('.zoneChooser').classList.toggle('hidden', !has);
@@ -176,15 +182,35 @@ function render() {
   updateSummary();
 }
 
+function getRowConfig(zone, rowNum) {
+  const z = zones[zone];
+  if (z.rowRanges) {
+    for (const range of z.rowRanges) {
+      if (rowNum >= range.from && rowNum <= range.to) return range;
+    }
+  }
+  return z;
+}
+
 function renderRows(map, v) {
-  for (let r = 1; r <= zones[v].rows; r++) {
+  const startRow = zones[v].startRow || 1;
+  for (let r = startRow; r <= zones[v].rows; r++) {
+    const cfg = getRowConfig(v, r);
     const row = document.createElement('div');
     row.className = 'row';
-    zones[v].odds.forEach(n => row.appendChild(btn(v, r, n)));
+    cfg.odds.forEach(n => row.appendChild(btn(v, r, n)));
     row.appendChild(Object.assign(document.createElement('span'), { className: 'aisle' }));
     row.appendChild(Object.assign(document.createElement('span'), { className: 'rowLabel', textContent: r }));
     row.appendChild(Object.assign(document.createElement('span'), { className: 'aisle' }));
-    zones[v].evens.forEach(n => row.appendChild(btn(v, r, n)));
+    const mainEvens = cfg.evens.filter(n => n <= 18);
+    const extraEvens = cfg.evens.filter(n => n > 18);
+    mainEvens.forEach(n => row.appendChild(btn(v, r, n)));
+    if (extraEvens.length) {
+      const gap = document.createElement('span');
+      gap.className = 'seatGap';
+      row.appendChild(gap);
+      extraEvens.forEach(n => row.appendChild(btn(v, r, n)));
+    }
     map.appendChild(row);
   }
 }

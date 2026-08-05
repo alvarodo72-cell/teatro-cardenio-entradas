@@ -3,12 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Validar entrada · Teatro Cardenio</title>
+  <title>Validar entradas · Teatro Cardenio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       min-height: 100vh;
-      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
       background: #0f172a;
       color: #fff;
       overflow: hidden;
@@ -21,37 +23,127 @@
       height: 100vh;
       height: 100dvh;
     }
+
+    /* --- HEADER --- */
     .header {
-      background: linear-gradient(135deg, #7b1d1d, #991b1b);
-      padding: 16px 20px;
+      background: linear-gradient(135deg, #7b1d1d 0%, #4a1010 100%);
+      padding: 14px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-shrink: 0;
       z-index: 10;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
     .header img {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
       object-fit: cover;
+      border: 2px solid rgba(212,160,23,0.4);
     }
     .header h1 {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 700;
+      letter-spacing: -0.02em;
     }
-    .header .status-dot {
-      width: 12px;
-      height: 12px;
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
       background: #22c55e;
       animation: pulse 2s infinite;
     }
-    .header .status-dot.offline { background: #ef4444; animation: none; }
+    .status-dot.offline { background: #ef4444; animation: none; }
     @keyframes pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.5; }
     }
+    .sound-btn {
+      background: rgba(255,255,255,0.15);
+      border: none;
+      border-radius: 8px;
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.2s;
+    }
+    .sound-btn:hover { background: rgba(255,255,255,0.25); }
+
+    /* --- EVENT SELECTOR --- */
+    .event-bar {
+      background: rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .event-bar label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #888;
+      white-space: nowrap;
+    }
+    .event-bar select {
+      flex: 1;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 500;
+      outline: none;
+      cursor: pointer;
+    }
+    .event-bar select:focus { border-color: #d4a017; }
+    .event-bar select option { background: #1e293b; color: #fff; }
+
+    /* --- COUNTER --- */
+    .counter-bar {
+      background: rgba(34,197,94,0.1);
+      border-bottom: 1px solid rgba(34,197,94,0.15);
+      padding: 8px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .counter-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .counter-item .num {
+      font-size: 18px;
+      font-weight: 800;
+      color: #22c55e;
+    }
+    .counter-item.error .num { color: #ef4444; }
+    .counter-item.warning .num { color: #f59e0b; }
+    .counter-label { color: #94a3b8; }
+
+    /* --- SCANNER --- */
     .scanner-wrap {
       flex: 1;
       position: relative;
@@ -74,68 +166,78 @@
       position: absolute;
       inset: 0;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       pointer-events: none;
       z-index: 5;
     }
     .scan-frame {
-      width: 260px;
-      height: 260px;
-      border: 3px solid rgba(255,255,255,0.8);
-      border-radius: 24px;
+      width: 240px;
+      height: 240px;
+      border: 3px solid rgba(255,255,255,0.6);
+      border-radius: 20px;
       position: relative;
       box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
     }
     .scan-frame::before {
       content: '';
       position: absolute;
-      inset: -6px;
+      inset: -5px;
       border: 3px solid #22c55e;
-      border-radius: 28px;
+      border-radius: 24px;
       animation: scanPulse 2s ease-in-out infinite;
     }
     @keyframes scanPulse {
       0%, 100% { opacity: 0.3; transform: scale(1); }
-      50% { opacity: 1; transform: scale(1.02); }
+      50% { opacity: 1; transform: scale(1.01); }
+    }
+    .scan-line {
+      position: absolute;
+      left: 10%;
+      right: 10%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #22c55e, transparent);
+      animation: scanLine 2s ease-in-out infinite;
+    }
+    @keyframes scanLine {
+      0%, 100% { top: 10%; opacity: 0.5; }
+      50% { top: 90%; opacity: 1; }
     }
     .scan-hint {
       position: absolute;
-      bottom: 24px;
+      bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
       background: rgba(0,0,0,0.7);
       backdrop-filter: blur(8px);
-      padding: 10px 20px;
-      border-radius: 30px;
-      font-size: 14px;
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 13px;
       font-weight: 600;
       color: #fff;
       white-space: nowrap;
       z-index: 6;
     }
+
+    /* --- RESULT PANEL --- */
     .result-panel {
       position: absolute;
       inset: 0;
       z-index: 20;
       display: none;
       flex-direction: column;
-      animation: resultIn 0.3s ease;
+      animation: resultIn 0.25s ease;
     }
     .result-panel.show { display: flex; }
     @keyframes resultIn {
-      from { opacity: 0; transform: scale(0.95); }
+      from { opacity: 0; transform: scale(0.96); }
       to { opacity: 1; transform: scale(1); }
     }
-    .result-panel.valid {
-      background: linear-gradient(135deg, #065f46, #047857);
-    }
-    .result-panel.invalid {
-      background: linear-gradient(135deg, #991b1b, #b91c1c);
-    }
-    .result-panel.used {
-      background: linear-gradient(135deg, #92400e, #b45309);
-    }
+    .result-panel.valid { background: linear-gradient(135deg, #065f46, #047857); }
+    .result-panel.invalid { background: linear-gradient(135deg, #991b1b, #b91c1c); }
+    .result-panel.used { background: linear-gradient(135deg, #92400e, #b45309); }
+    .result-panel.wrong-event { background: linear-gradient(135deg, #581c87, #7c3aed); }
     .result-content {
       flex: 1;
       display: flex;
@@ -144,41 +246,31 @@
       justify-content: center;
       padding: 30px;
       text-align: center;
-      gap: 16px;
+      gap: 12px;
     }
-    .result-icon {
-      font-size: 72px;
-      line-height: 1;
-    }
-    .result-title {
-      font-size: 28px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-    }
-    .result-subtitle {
-      font-size: 14px;
-      opacity: 0.8;
-    }
+    .result-icon { font-size: 64px; line-height: 1; }
+    .result-title { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+    .result-subtitle { font-size: 13px; opacity: 0.8; max-width: 300px; }
     .result-info {
       background: rgba(255,255,255,0.15);
-      border-radius: 16px;
-      padding: 16px 20px;
+      border-radius: 14px;
+      padding: 14px 18px;
       width: 100%;
-      max-width: 340px;
+      max-width: 320px;
       text-align: left;
     }
     .result-info-row {
       display: flex;
       justify-content: space-between;
-      padding: 6px 0;
+      padding: 5px 0;
       border-bottom: 1px solid rgba(255,255,255,0.1);
-      font-size: 13px;
+      font-size: 12px;
     }
     .result-info-row:last-child { border-bottom: none; }
     .result-info-row span { opacity: 0.7; }
     .result-info-row strong { font-weight: 700; }
     .result-actions {
-      padding: 16px 20px 32px;
+      padding: 14px 20px 28px;
       display: flex;
       gap: 10px;
       flex-shrink: 0;
@@ -186,64 +278,52 @@
     .result-btn {
       flex: 1;
       border: none;
-      border-radius: 14px;
-      padding: 16px;
+      border-radius: 12px;
+      padding: 14px;
       font-weight: 700;
-      font-size: 15px;
+      font-size: 14px;
       cursor: pointer;
       transition: transform 0.15s ease;
     }
     .result-btn:active { transform: scale(0.97); }
-    .result-btn.primary {
-      background: #fff;
-      color: #065f46;
-    }
-    .result-btn.secondary {
-      background: rgba(255,255,255,0.2);
-      color: #fff;
-    }
-    .no-camera {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 40px;
-      text-align: center;
-      gap: 16px;
-    }
-    .no-camera .icon { font-size: 48px; }
-    .no-camera h2 { font-size: 20px; }
-    .no-camera p { font-size: 14px; opacity: 0.7; }
+    .result-btn.primary { background: #fff; color: #065f46; }
+    .result-btn.secondary { background: rgba(255,255,255,0.2); color: #fff; }
+
+    /* --- MANUAL INPUT --- */
     .manual-input {
-      padding: 16px 20px;
-      background: rgba(255,255,255,0.1);
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.08);
       display: flex;
       gap: 8px;
       flex-shrink: 0;
+      border-top: 1px solid rgba(255,255,255,0.06);
     }
     .manual-input input {
       flex: 1;
-      border: 2px solid rgba(255,255,255,0.2);
-      border-radius: 12px;
-      padding: 12px 14px;
-      font-size: 14px;
+      border: 2px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
       background: rgba(0,0,0,0.3);
       color: #fff;
       outline: none;
     }
-    .manual-input input::placeholder { color: rgba(255,255,255,0.4); }
+    .manual-input input::placeholder { color: rgba(255,255,255,0.35); }
     .manual-input input:focus { border-color: #22c55e; }
     .manual-input button {
       border: none;
-      border-radius: 12px;
-      padding: 12px 18px;
+      border-radius: 10px;
+      padding: 10px 16px;
       background: #22c55e;
       color: #fff;
       font-weight: 700;
-      font-size: 14px;
+      font-size: 13px;
       cursor: pointer;
+      transition: background 0.2s;
     }
+    .manual-input button:hover { background: #16a34a; }
+
+    /* --- FLASH --- */
     .flash {
       position: absolute;
       inset: 0;
@@ -256,39 +336,87 @@
     .flash.green { background: rgba(34,197,94,0.4); }
     .flash.red { background: rgba(239,68,68,0.4); }
     .flash.orange { background: rgba(245,158,11,0.4); }
-    .sound-btn {
-      background: rgba(255,255,255,0.15);
-      border: none;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
+    .flash.purple { background: rgba(139,92,246,0.4); }
+
+    /* --- NO CAMERA --- */
+    .no-camera {
+      flex: 1;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
-      font-size: 18px;
+      padding: 40px;
+      text-align: center;
+      gap: 12px;
     }
+    .no-camera .icon { font-size: 48px; }
+    .no-camera h2 { font-size: 18px; }
+    .no-camera p { font-size: 13px; opacity: 0.7; }
+
+    .no-event {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      text-align: center;
+      gap: 12px;
+    }
+    .no-event .icon { font-size: 48px; opacity: 0.5; }
+    .no-event p { font-size: 14px; color: #64748b; }
   </style>
 </head>
 <body>
   <div class="app" id="app">
     <div class="header">
-      <div style="display:flex;align-items:center;gap:12px;">
+      <div class="header-left">
         <img src="logo%20(2).jpeg" alt="ACA">
         <h1>Validar entradas</h1>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;">
+      <div class="header-right">
         <button class="sound-btn" id="soundToggle" title="Sonido">🔊</button>
         <div class="status-dot" id="statusDot"></div>
       </div>
     </div>
+
+    <div class="event-bar">
+      <label>Evento</label>
+      <select id="eventSelect">
+        <option value="">Cargando eventos...</option>
+      </select>
+    </div>
+
+    <div class="counter-bar" id="counterBar">
+      <div class="counter-item">
+        <span class="num" id="countValid">0</span>
+        <span class="counter-label">Validadas</span>
+      </div>
+      <div class="counter-item error">
+        <span class="num" id="countError">0</span>
+        <span class="counter-label">Errores</span>
+      </div>
+      <div class="counter-item warning">
+        <span class="num" id="countUsed">0</span>
+        <span class="counter-label">Repetidas</span>
+      </div>
+    </div>
+
     <div class="scanner-wrap" id="scannerWrap">
       <div id="qr-reader"></div>
-      <div class="scan-overlay">
-        <div class="scan-frame"></div>
+      <div class="scan-overlay" id="scanOverlay">
+        <div class="scan-frame">
+          <div class="scan-line"></div>
+        </div>
+        <div class="scan-hint">Apunta al código QR</div>
       </div>
-      <div class="scan-hint">Apunta al código QR</div>
       <div class="flash" id="flash"></div>
+
+      <div class="no-event" id="noEventMsg" style="display:none">
+        <div class="icon">🎭</div>
+        <p>Selecciona un evento para comenzar a validar</p>
+      </div>
+
       <div class="result-panel" id="resultPanel">
         <div class="result-content">
           <div class="result-icon" id="resultIcon"></div>
@@ -297,13 +425,14 @@
           <div class="result-info" id="resultInfo"></div>
         </div>
         <div class="result-actions">
-          <button class="result-btn secondary" id="btnCancel" onclick="closeResult()">Cancelar</button>
+          <button class="result-btn secondary" id="btnCancel" onclick="closeResult()">Cerrar</button>
           <button class="result-btn primary" id="btnConfirm" onclick="confirmValidation()">Confirmar entrada</button>
         </div>
       </div>
     </div>
+
     <div class="manual-input">
-      <input type="text" id="manualInput" placeholder="Escribe el token manualmente..." autocomplete="off">
+      <input type="text" id="manualInput" placeholder="Token manual..." autocomplete="off">
       <button id="manualBtn">Validar</button>
     </div>
   </div>
@@ -316,8 +445,11 @@
     let soundEnabled = true;
     let currentTicket = null;
     let scanning = false;
+    let selectedEventId = null;
+    let countValid = 0, countError = 0, countUsed = 0;
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
     function playBeep(freq, duration, count = 1) {
       if (!soundEnabled) return;
       for (let i = 0; i < count; i++) {
@@ -342,13 +474,63 @@
       setTimeout(() => el.className = 'flash', 400);
     }
 
+    function updateCounters() {
+      document.getElementById('countValid').textContent = countValid;
+      document.getElementById('countError').textContent = countError;
+      document.getElementById('countUsed').textContent = countUsed;
+    }
+
     document.getElementById('soundToggle').onclick = () => {
       soundEnabled = !soundEnabled;
       document.getElementById('soundToggle').textContent = soundEnabled ? '🔊' : '🔇';
     };
 
+    async function loadEvents() {
+      const { data: events } = await window.sb
+        .from('events')
+        .select('*')
+        .in('estado', ['activo', 'cerrado'])
+        .order('fecha');
+
+      const sel = document.getElementById('eventSelect');
+      if (!events || events.length === 0) {
+        sel.innerHTML = '<option value="">No hay eventos</option>';
+        return;
+      }
+
+      sel.innerHTML = '<option value="">Selecciona evento...</option>' +
+        events.map(e => `<option value="${e.id}">${e.nombre} · ${e.fecha} · ${String(e.hora).slice(0,5)}</option>`).join('');
+
+      if (events.length === 1) {
+        sel.value = events[0].id;
+        selectedEventId = events[0].id;
+      }
+    }
+
+    document.getElementById('eventSelect').onchange = (e) => {
+      selectedEventId = e.target.value || null;
+      countValid = 0;
+      countError = 0;
+      countUsed = 0;
+      updateCounters();
+      closeResult();
+    };
+
     async function validateToken(token) {
       if (!token || scanning) return;
+
+      if (!selectedEventId) {
+        flashScreen('red');
+        playBeep(300, 300, 2);
+        showResult('invalid', {
+          icon: '⚠️',
+          title: 'Selecciona evento',
+          subtitle: 'Debes seleccionar un evento antes de validar.',
+          info: null
+        });
+        return;
+      }
+
       scanning = true;
       playBeep(800, 100);
 
@@ -361,10 +543,12 @@
       if (error || !ticket) {
         flashScreen('red');
         playBeep(300, 300, 3);
+        countError++;
+        updateCounters();
         showResult('invalid', {
           icon: '❌',
           title: 'Entrada no válida',
-          subtitle: 'Este código QR no corresponde a ninguna entrada registrada.',
+          subtitle: 'Este código QR no corresponde a ninguna entrada.',
           info: null
         });
         scanning = false;
@@ -372,15 +556,38 @@
       }
 
       currentTicket = ticket;
+      const order = ticket.orders || {};
+      const ticketEvent = order.events || {};
+
+      if (ticketEvent.id && ticketEvent.id !== selectedEventId) {
+        flashScreen('purple');
+        playBeep(400, 250, 3);
+        countError++;
+        updateCounters();
+        showResult('wrong-event', {
+          icon: '🎭',
+          title: 'Evento incorrecto',
+          subtitle: `Esta entrada es para: ${ticketEvent.nombre || 'otro evento'}`,
+          info: [
+            ['Tu evento', (document.getElementById('eventSelect')?.selectedOptions[0]?.text || '').split(' · ')[0]],
+            ['Entrada para', ticketEvent.nombre || ''],
+            ['Fecha', ticketEvent.fecha || ''],
+            ['Nombre', ticket.nombre + ' ' + ticket.apellidos]
+          ]
+        });
+        scanning = false;
+        return;
+      }
 
       if (ticket.estado === 'usada') {
         flashScreen('orange');
         playBeep(500, 200, 2);
-        const order = ticket.orders || {};
+        countUsed++;
+        updateCounters();
         showResult('used', {
           icon: '⚠️',
           title: 'Entrada ya utilizada',
-          subtitle: 'Esta entrada ya ha sido escaneada anteriormente.',
+          subtitle: 'Esta entrada ya fue escaneada anteriormente.',
           info: [
             ['Nombre', ticket.nombre + ' ' + ticket.apellidos],
             ['DNI', ticket.dni],
@@ -396,10 +603,12 @@
       if (ticket.estado === 'cancelada') {
         flashScreen('red');
         playBeep(300, 300, 3);
+        countError++;
+        updateCounters();
         showResult('invalid', {
           icon: '🚫',
           title: 'Entrada cancelada',
-          subtitle: 'Esta entrada ha sido cancelada.',
+          subtitle: 'Esta entrada ha sido anulada.',
           info: [
             ['Nombre', ticket.nombre + ' ' + ticket.apellidos],
             ['DNI', ticket.dni],
@@ -412,18 +621,19 @@
 
       flashScreen('green');
       playBeep(1200, 150, 2);
-      const order = ticket.orders || {};
-      const event = order.events || {};
       const seat = ticket.seats || {};
-      const eventDate = event.fecha
-        ? new Date(event.fecha + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+      const eventDate = ticketEvent.fecha
+        ? new Date(ticketEvent.fecha + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
         : '';
-      const eventTime = event.hora ? String(event.hora).slice(0, 5) : '';
+      const eventTime = ticketEvent.hora ? String(ticketEvent.hora).slice(0, 5) : '';
+
+      countValid++;
+      updateCounters();
 
       showResult('valid', {
         icon: '✅',
-        title: 'Entrada confirmada',
-        subtitle: `${event.nombre || ''} · ${eventDate} ${eventTime}`,
+        title: 'Entrada correcta',
+        subtitle: `${ticketEvent.nombre || ''} · ${eventDate} ${eventTime}`,
         info: [
           ['Nombre', ticket.nombre + ' ' + ticket.apellidos],
           ['DNI', ticket.dni],
@@ -448,7 +658,7 @@
         .eq('id', currentTicket.id);
 
       if (error) {
-        alert('Error al marcar la entrada: ' + error.message);
+        alert('Error: ' + error.message);
         btn.textContent = 'Confirmar entrada';
         btn.disabled = false;
         return;
@@ -493,26 +703,15 @@
     }
 
     function startScanner() {
-      if (qrScanner) {
-        qrScanner.clear();
-      }
+      if (qrScanner) qrScanner.clear();
       qrScanner = new Html5Qrcode('qr-reader');
       qrScanner.start(
         { facingMode: 'environment' },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0
-        },
+        { fps: 10, qrbox: { width: 230, height: 230 }, aspectRatio: 1.0 },
         (decodedText) => {
           const url = decodedText.trim();
           let token = '';
-          try {
-            const u = new URL(url);
-            token = u.searchParams.get('token') || url;
-          } catch {
-            token = url;
-          }
+          try { token = new URL(url).searchParams.get('token') || url; } catch { token = url; }
           validateToken(token);
         },
         () => {}
@@ -541,16 +740,18 @@
       }
     });
 
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      startScanner();
-    } else {
-      document.getElementById('scannerWrap').innerHTML = `
-        <div class="no-camera">
-          <div class="icon">📱</div>
-          <h2>Cámara no soportada</h2>
-          <p>Usa el campo de abajo para introducir el token manualmente.</p>
-        </div>`;
-    }
+    loadEvents().then(() => {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        startScanner();
+      } else {
+        document.getElementById('scannerWrap').innerHTML = `
+          <div class="no-camera">
+            <div class="icon">📱</div>
+            <h2>Cámara no soportada</h2>
+            <p>Usa el campo de abajo para introducir el token manualmente.</p>
+          </div>`;
+      }
+    });
   </script>
 </body>
 </html>

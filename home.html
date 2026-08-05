@@ -26,6 +26,161 @@
       min-height: 100vh;
     }
 
+    /* --- TOP NAV --- */
+    .topNav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 32px;
+      background: rgba(15,15,26,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .topNav-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .topNav-logo img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--dorado);
+    }
+
+    .topNav-logo span {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--doradoClaro);
+    }
+
+    .topNav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .topNav-links a {
+      color: #ccc;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+      transition: color 0.3s;
+      position: relative;
+    }
+
+    .topNav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--dorado);
+      transition: width 0.3s;
+    }
+
+    .topNav-links a:hover { color: #fff; }
+    .topNav-links a:hover::after { width: 100%; }
+
+    /* Hamburger button */
+    .menuToggle {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      z-index: 110;
+    }
+
+    .menuToggle span {
+      display: block;
+      width: 26px;
+      height: 3px;
+      background: #fff;
+      border-radius: 2px;
+      transition: all 0.3s ease;
+    }
+
+    .menuToggle.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 6px); }
+    .menuToggle.active span:nth-child(2) { opacity: 0; }
+    .menuToggle.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -6px); }
+
+    /* Dropdown menu */
+    .dropdownMenu {
+      position: fixed;
+      top: 0;
+      right: -320px;
+      width: 300px;
+      height: 100vh;
+      background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%);
+      border-left: 1px solid rgba(212,160,23,0.2);
+      z-index: 105;
+      padding: 100px 32px 40px;
+      transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .dropdownMenu.open { right: 0; }
+
+    .dropdownMenu a {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 20px;
+      color: #ccc;
+      text-decoration: none;
+      font-size: 16px;
+      font-weight: 500;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      border: 1px solid transparent;
+    }
+
+    .dropdownMenu a:hover {
+      background: rgba(212,160,23,0.1);
+      border-color: rgba(212,160,23,0.2);
+      color: var(--doradoClaro);
+      transform: translateX(-4px);
+    }
+
+    .dropdownMenu a .icon {
+      font-size: 22px;
+      width: 32px;
+      text-align: center;
+    }
+
+    .dropdownOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 104;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .dropdownOverlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
     /* --- HERO --- */
     .hero {
       position: relative;
@@ -67,7 +222,6 @@
       max-width: 700px;
     }
 
-    /* Logo */
     .heroLogo {
       width: 160px;
       height: 160px;
@@ -216,6 +370,209 @@
       line-height: 1.5;
     }
 
+    /* --- QUIÉNES SOMOS --- */
+    .quienesSomos {
+      position: relative;
+      z-index: 2;
+      padding: 80px 20px;
+      max-width: 800px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .aboutContent {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 24px;
+      padding: 48px 40px;
+    }
+
+    .aboutText {
+      font-size: 16px;
+      color: #aaa;
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+
+    .aboutText:last-child {
+      margin-bottom: 0;
+    }
+
+    @media (max-width: 768px) {
+      .quienesSomos { padding: 60px 16px; }
+      .aboutContent { padding: 32px 24px; }
+    }
+
+    /* --- PROGRAMACIÓN --- */
+    .programacion {
+      position: relative;
+      z-index: 2;
+      padding: 80px 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .sectionHeader {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .sectionTag {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--dorado);
+      background: rgba(212,160,23,0.1);
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(212,160,23,0.2);
+      margin-bottom: 16px;
+    }
+
+    .sectionTitle {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(32px, 6vw, 48px);
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+
+    .sectionDesc {
+      font-size: 16px;
+      color: #888;
+    }
+
+    .eventsGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 24px;
+    }
+
+    .eventCard {
+      background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 32px;
+      transition: all 0.4s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .eventCard::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--rojo), var(--dorado));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .eventCard:hover {
+      transform: translateY(-6px);
+      border-color: rgba(212,160,23,0.3);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3), 0 0 40px rgba(212,160,23,0.1);
+    }
+
+    .eventCard:hover::before { opacity: 1; }
+
+    .eventDate {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .eventDateBox {
+      background: linear-gradient(135deg, var(--rojo), var(--rojoOscuro));
+      border-radius: 12px;
+      padding: 12px 16px;
+      text-align: center;
+      min-width: 64px;
+    }
+
+    .eventDateDay {
+      font-size: 28px;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .eventDateMonth {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.7);
+      letter-spacing: 0.1em;
+    }
+
+    .eventTime {
+      font-size: 14px;
+      color: var(--dorado);
+      font-weight: 600;
+    }
+
+    .eventName {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+      line-height: 1.2;
+    }
+
+    .eventDesc {
+      font-size: 14px;
+      color: #888;
+      line-height: 1.5;
+      margin-bottom: 24px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .eventCard .ctaBtn {
+      width: 100%;
+      justify-content: center;
+      padding: 14px 24px;
+      font-size: 15px;
+    }
+
+    .eventsLoading {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+      font-size: 15px;
+    }
+
+    .noEvents {
+      text-align: center;
+      padding: 80px 20px;
+    }
+
+    .noEventsIcon {
+      font-size: 64px;
+      display: block;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .noEvents p {
+      color: #666;
+      font-size: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .eventsGrid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
+      .programacion { padding: 60px 16px; }
+    }
+
     /* --- FOOTER --- */
     .footer {
       position: relative;
@@ -232,7 +589,7 @@
       text-decoration: none;
     }
 
-    /* --- PARTICLES (decorative) --- */
+    /* --- PARTICLES --- */
     .particles {
       position: absolute;
       inset: 0;
@@ -269,21 +626,62 @@
 
     /* --- RESPONSIVE --- */
     @media (max-width: 768px) {
+      .topNav-links { display: none; }
       .features { grid-template-columns: 1fr; max-width: 400px; gap: 16px; margin-top: -40px; }
       .heroLogo { width: 120px; height: 120px; }
       .ctaBtn { padding: 16px 32px; font-size: 16px; }
+      .dropdownMenu { width: 260px; }
     }
 
     @media (max-width: 480px) {
+      .topNav { padding: 12px 20px; }
       .hero { padding: 30px 16px; }
       .heroLogo { width: 100px; height: 100px; margin-bottom: 24px; }
       .ctaBtn { padding: 14px 28px; font-size: 15px; width: 100%; justify-content: center; max-width: 300px; }
       .feature { padding: 20px 16px; }
+      .dropdownMenu { width: 100%; }
     }
   </style>
 </head>
 <body>
 
+  <!-- TOP NAV -->
+  <nav class="topNav">
+    <a href="home.html" class="topNav-logo">
+      <img src="logo%20(2).jpeg" alt="Cardenio ACA">
+      <span>Teatro Cardenio</span>
+    </a>
+
+    <ul class="topNav-links">
+      <li><a href="#quienes-somos">Quiénes somos</a></li>
+      <li><a href="#programacion">Programación</a></li>
+    </ul>
+
+    <button class="menuToggle" id="menuToggle" aria-label="Abrir menú">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </nav>
+
+  <!-- DROPDOWN MENU -->
+  <div class="dropdownOverlay" id="dropdownOverlay"></div>
+  <div class="dropdownMenu" id="dropdownMenu">
+    <a href="index.html">
+      <span class="icon">🎫</span>
+      Comprar entradas teatro
+    </a>
+    <a href="#" id="damaInfantil">
+      <span class="icon">👑</span>
+      Dama infantil
+    </a>
+    <a href="#" id="damaJuvenil">
+      <span class="icon">👑</span>
+      Dama juvenil
+    </a>
+  </div>
+
+  <!-- HERO -->
   <section class="hero">
     <div class="particles">
       <div class="particle"></div>
@@ -300,36 +698,127 @@
       <img src="logo%20(2).jpeg" alt="Cardenio ACA" class="heroLogo">
       <p class="heroSubtitle">Asociación Carnaval ACA</p>
       <h1 class="heroTitle">Teatro Cardenio</h1>
-      <p class="heroDesc">Disfruta de las mejores funciones en el escenario más especial del carnaval. Entradas online rápidas y seguras.</p>
-
-      <a href="index.html" class="ctaBtn">
-        🎫 Comprar entradas
-        <span class="ctaArrow">→</span>
-      </a>
+      <p class="heroDesc">Disfruta de las mejores funciones en el escenario más especial del carnaval. Compra tus entradas desde el menú.</p>
     </div>
   </section>
 
-  <div class="features">
-    <div class="feature">
-      <span class="featureIcon">⚡</span>
-      <h3>Rápido y fácil</h3>
-      <p>Compra tu entrada en menos de 2 minutos desde tu móvil o ordenador.</p>
+  <!-- QUIÉNES SOMOS -->
+  <section class="quienesSomos" id="quienes-somos">
+    <div class="aboutContent">
+      <span class="sectionTag">Sobre nosotros</span>
+      <h2 class="sectionTitle">Quiénes somos</h2>
+      <p class="aboutText">
+        Somos la Asociación Carnaval ACA, una asociación cultural dedicada a celebrar la tradición teatral del carnaval. 
+        Desde nuestro escenario, el Teatro Cardenio, ofrecemos obras originales, adaptaciones clásicas y espectáculos únicos 
+        que conectan con el público de todas las edades.
+      </p>
+      <p class="aboutText">
+        Nuestro objetivo es acercar el teatro a la comunidad, fomentando la cultura y el entretenimiento de calidad 
+        durante las fiestas del carnaval.
+      </p>
     </div>
-    <div class="feature">
-      <span class="featureIcon">📱</span>
-      <h3>Entrada con QR</h3>
-      <p>Recibe tu entrada digital con código QR. Solo muestra tu pantalla en la entrada.</p>
-    </div>
-    <div class="feature">
-      <span class="featureIcon">💺</span>
-      <h3>Elige tu butaca</h3>
-      <p>Selecciona tu asiento favorito del mapa del teatro al comprar.</p>
-    </div>
-  </div>
+  </section>
 
+  <!-- PROGRAMACIÓN -->
+  <section class="programacion" id="programacion">
+    <div class="sectionHeader">
+      <span class="sectionTag">Próximas funciones</span>
+      <h2 class="sectionTitle">Programación</h2>
+      <p class="sectionDesc">Consulta las próximas obras y reserva tu entrada</p>
+    </div>
+    <div class="eventsGrid" id="eventsGrid">
+      <div class="eventsLoading">Cargando programación...</div>
+    </div>
+    <div class="noEvents hidden" id="noEvents">
+      <span class="noEventsIcon">🎭</span>
+      <p>Próximamente publicaremos nuevas funciones</p>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
   <footer class="footer">
     <p>© 2026 Asociación Carnaval ACA</p>
   </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script>
+    const menuToggle = document.getElementById('menuToggle');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    const dropdownOverlay = document.getElementById('dropdownOverlay');
+
+    function toggleMenu() {
+      menuToggle.classList.toggle('active');
+      dropdownMenu.classList.toggle('open');
+      dropdownOverlay.classList.toggle('open');
+      document.body.style.overflow = dropdownMenu.classList.contains('open') ? 'hidden' : '';
+    }
+
+    menuToggle.addEventListener('click', toggleMenu);
+    dropdownOverlay.addEventListener('click', toggleMenu);
+
+    document.querySelectorAll('.dropdownMenu a').forEach(link => {
+      link.addEventListener('click', () => {
+        if (dropdownMenu.classList.contains('open')) toggleMenu();
+      });
+    });
+
+    async function loadProgramacion() {
+      const grid = document.getElementById('eventsGrid');
+      const noEvents = document.getElementById('noEvents');
+
+      try {
+        const { data: events, error } = await window.sb
+          .from('events')
+          .select('*')
+          .eq('estado', 'activo')
+          .order('fecha')
+          .order('hora');
+
+        if (error) throw error;
+
+        if (!events || events.length === 0) {
+          grid.classList.add('hidden');
+          noEvents.classList.remove('hidden');
+          return;
+        }
+
+        const months = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+
+        grid.innerHTML = events.map(e => {
+          const date = new Date(e.fecha + 'T00:00:00');
+          const day = date.getDate();
+          const month = months[date.getMonth()];
+          const time = String(e.hora).slice(0, 5);
+          const desc = e.descripcion || 'Disfruta de esta función en el Teatro Cardenio.';
+
+          return `
+            <div class="eventCard">
+              <div class="eventDate">
+                <div class="eventDateBox">
+                  <div class="eventDateDay">${day}</div>
+                  <div class="eventDateMonth">${month}</div>
+                </div>
+                <div class="eventTime">🕐 ${time}h</div>
+              </div>
+              <h3 class="eventName">${e.nombre}</h3>
+              <p class="eventDesc">${desc}</p>
+              <a href="index.html?event=${e.id}" class="ctaBtn">
+                🎫 Comprar entradas
+                <span class="ctaArrow">→</span>
+              </a>
+            </div>
+          `;
+        }).join('');
+
+      } catch (err) {
+        grid.innerHTML = '<div class="eventsLoading">Error al cargar la programación</div>';
+        console.error(err);
+      }
+    }
+
+    loadProgramacion();
+  </script>
 
 </body>
 </html>
